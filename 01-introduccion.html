@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>1&nbsp; Introducción – Modelado de regresión bayesiana con INLA</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./02-teoria-inla.html" rel="next">
+<link href="./00-prefacio.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-9b98f18118eee809be1c051eb5cc78e4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Sin resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="estilos.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-introduccion.html"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introducción</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Buscar" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Modelado de regresión bayesiana con INLA</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Buscar"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Presentación</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00-prefacio.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Prefacio</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-introduccion.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introducción</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-teoria-inla.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Teoría de INLA</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-regresion-lineal.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Regresión lineal bayesiana</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-modelos-lineales-generalizados.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Modelos lineales generalizados</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-modelos-mixtos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Modelos lineales mixtos y lineales generalizados mixtos</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06-supervivencia.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Análisis de supervivencia</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-caminatas-aleatorias-suavizado.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Modelos de caminata aleatoria para métodos de suavizado</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08-procesos-gaussianos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Regresión con procesos gaussianos</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09-modelos-aditivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Modelos aditivos y aditivos generalizados</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10-error-variables.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Regresión con error en las variables</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11-temas-diversos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Temas diversos en INLA</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Tabla de contenidos</h2>
+   
+  <ul>
+  <li><a href="#inicio-rápido" id="toc-inicio-rápido" class="nav-link active" data-scroll-target="#inicio-rápido"><span class="header-section-number">1.1</span> Inicio rápido</a>
+  <ul class="collapse">
+  <li><a href="#ley-de-hubble" id="toc-ley-de-hubble" class="nav-link" data-scroll-target="#ley-de-hubble"><span class="header-section-number">1.1.1</span> Ley de Hubble</a></li>
+  <li><a href="#análisis-estándar" id="toc-análisis-estándar" class="nav-link" data-scroll-target="#análisis-estándar"><span class="header-section-number">1.1.2</span> Análisis estándar</a></li>
+  <li><a href="#análisis-bayesiano" id="toc-análisis-bayesiano" class="nav-link" data-scroll-target="#análisis-bayesiano"><span class="header-section-number">1.1.3</span> Análisis bayesiano</a></li>
+  <li><a href="#inla" id="toc-inla" class="nav-link" data-scroll-target="#inla"><span class="header-section-number">1.1.4</span> INLA</a></li>
+  </ul></li>
+  <li><a href="#teoría-de-bayes" id="toc-teoría-de-bayes" class="nav-link" data-scroll-target="#teoría-de-bayes"><span class="header-section-number">1.2</span> Teoría de Bayes</a></li>
+  <li><a href="#distribuciones-previas-y-posteriores" id="toc-distribuciones-previas-y-posteriores" class="nav-link" data-scroll-target="#distribuciones-previas-y-posteriores"><span class="header-section-number">1.3</span> Distribuciones previas y posteriores</a></li>
+  <li><a href="#comprobación-del-modelo" id="toc-comprobación-del-modelo" class="nav-link" data-scroll-target="#comprobación-del-modelo"><span class="header-section-number">1.4</span> Comprobación del modelo</a></li>
+  <li><a href="#selección-del-modelo" id="toc-selección-del-modelo" class="nav-link" data-scroll-target="#selección-del-modelo"><span class="header-section-number">1.5</span> Selección del modelo</a></li>
+  <li><a href="#contraste-de-hipótesis" id="toc-contraste-de-hipótesis" class="nav-link" data-scroll-target="#contraste-de-hipótesis"><span class="header-section-number">1.6</span> Contraste de hipótesis</a></li>
+  <li><a href="#computación-bayesiana" id="toc-computación-bayesiana" class="nav-link" data-scroll-target="#computación-bayesiana"><span class="header-section-number">1.7</span> Computación bayesiana</a>
+  <ul class="collapse">
+  <li><a href="#cálculo-exacto" id="toc-cálculo-exacto" class="nav-link" data-scroll-target="#cálculo-exacto"><span class="header-section-number">1.7.1</span> Cálculo exacto</a></li>
+  <li><a href="#muestreo" id="toc-muestreo" class="nav-link" data-scroll-target="#muestreo"><span class="header-section-number">1.7.2</span> Muestreo</a></li>
+  <li><a href="#aproximación" id="toc-aproximación" class="nav-link" data-scroll-target="#aproximación"><span class="header-section-number">1.7.3</span> Aproximación</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introducción</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>INLA puede ser bastante complejo, por lo que comenzaremos con un ejemplo sencillo de regresión para ilustrar sus características más básicas. No pretendemos ofrecer una introducción exhaustiva a los métodos bayesianos. En cambio, repasaremos la teoría bayesiana que aparecerá más adelante en el libro. También explicaremos por qué podría preferirse INLA frente a sus alternativas.</p>
+<section id="inicio-rápido" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="inicio-rápido"><span class="header-section-number">1.1</span> Inicio rápido</h2>
+<section id="ley-de-hubble" class="level3" data-number="1.1.1">
+<h3 data-number="1.1.1" class="anchored" data-anchor-id="ley-de-hubble"><span class="header-section-number">1.1.1</span> Ley de Hubble</h3>
+<p>Comencemos a trabajar con INLA mediante un ejemplo sencillo. Supongamos que queremos conocer la edad del universo. Al principio ocurrió el <em>big bang</em>. Las galaxias se alejaron del centro del universo a velocidad constante. Si medimos la velocidad de otras galaxias respecto de nosotros y su distancia hasta nosotros, podemos estimar la edad del universo. Usamos la ley de Hubble, que establece:</p>
+<p><span class="math display">\[
+y = \beta x,
+\]</span></p>
+<p>donde <span class="math inline">\(y\)</span> es la velocidad relativa entre nosotros y otra galaxia, y <span class="math inline">\(x\)</span> es la distancia desde nosotros hasta esa galaxia. A <span class="math inline">\(\beta\)</span> se le denomina constante de Hubble. Podemos estimar la edad del universo como <span class="math inline">\(\beta^{-1}\)</span>.</p>
+<p>El telescopio espacial Hubble ha permitido reunir los datos indispensables para responder esta pregunta. Utilizamos datos de 24 galaxias presentados por <span class="citation" data-cites="freedman2001">Freedman et&nbsp;al. (<a href="#ref-freedman2001" role="doc-biblioref">2001</a>)</span>. Los mismos datos también se analizan en <span class="citation" data-cites="wood2006">Wood (<a href="#ref-wood2006" role="doc-biblioref">2006</a>)</span>. Consulte el apéndice A de la edición original para instalar INLA y el paquete R del libro. Los datos se encuentran en dicho paquete, llamado <code>brinla</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(hubble, <span class="at">package =</span> <span class="st">"brinla"</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A lo largo del libro resaltamos el código R de esta manera. Puede escribirlo en la consola de R o copiarlo desde los guiones de cada capítulo. También puede acceder a los datos y funciones mediante <code>library(brinla)</code>. Hemos preferido <code>data()</code> para dejar clara la procedencia de los datos.</p>
+<p>Graficamos los datos como se muestra en la <a href="#fig-hubble-datos" class="quarto-xref">Figura&nbsp;<span>1.1</span></a>.</p>
+<div id="fig-hubble-datos" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hubble-datos-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figuras/hubble-datos.png" class="img-fluid figure-img" style="width:85.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hubble-datos-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figura&nbsp;1.1: Distancia y velocidad de 24 galaxias respecto de nuestra ubicación.
+</figcaption>
+</figure>
+</div>
+<p>Observamos que los puntos no están todos sobre una recta, por lo que debe existir algún error de medición. Esto no sorprende, dada la dificultad de observar objetos tan lejanos. Aun así, se aprecia una relación aproximadamente lineal entre las variables, congruente con la ley de Hubble. Incorporamos el error mediante el modelo</p>
+<p><span class="math display">\[
+y_i=\beta x_i+\varepsilon_i, \qquad i=1,\ldots,24.
+\]</span></p>
+<p>Por ahora solo suponemos que los errores tienen media cero y varianza <span class="math inline">\(\sigma^2\)</span>.</p>
+</section>
+<section id="análisis-estándar" class="level3" data-number="1.1.2">
+<h3 data-number="1.1.2" class="anchored" data-anchor-id="análisis-estándar"><span class="header-section-number">1.1.2</span> Análisis estándar</h3>
+<p>El método de mínimos cuadrados tiene ya casi 200 años y puede aplicarse para estimar <span class="math inline">\(\beta\)</span>. El modelo no contiene intercepto, por lo que incluimos <code>-1</code> en su fórmula.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>lmod <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x <span class="sc">-</span> <span class="dv">1</span>, <span class="at">data =</span> hubble)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(lmod)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>     x
+76.581</code></pre>
+<p>Esta es nuestra estimación de <span class="math inline">\(\beta\)</span>, la constante de Hubble. Debemos convertir las unidades de los datos a una forma más conveniente. Hay 60 segundos por minuto, 60 minutos por hora, 24 horas por día y 365.25 días por año; un megapársec (Mpc) equivale a <span class="math inline">\(3.09\times10^{19}\)</span> km. La siguiente función transforma la constante de Hubble en la edad del universo, expresada en miles de millones de años, y la aplicamos a nuestra estimación:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>hubtoage <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fl">3.09e+19</span><span class="sc">/</span>(x <span class="sc">*</span> <span class="dv">60</span><span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="fl">365.25</span> <span class="sc">*</span> <span class="fl">1e+09</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hubtoage</span>(<span class="fu">coef</span>(lmod))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>     x
+12.786</code></pre>
+<p>La estimación puntual de la edad del universo es de 12.8 miles de millones de años. Sabemos que existe incertidumbre y quizá deseemos expresarla mediante un intervalo de confianza. Para ello necesitamos una suposición distribucional sobre los errores: suponemos que siguen una distribución gaussiana. Hay otras suposiciones. Consideramos correcta la forma estructural del modelo, con base en la ley de Hubble y en el aparente respaldo de los datos. También hemos supuesto que los errores tienen varianza constante. Puede que esto no sea completamente cierto, pero lo aceptaremos para mantener la sencillez.</p>
+<p>Construimos un intervalo de confianza del 95 % para la constante de Hubble:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>(bci <span class="ot">&lt;-</span> <span class="fu">confint</span>(lmod))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>   2.5 % 97.5 %
+x 68.379 84.783</code></pre>
+<p>El intervalo es bastante amplio. Podemos transformarlo a un intervalo para la edad del universo:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hubtoage</span>(bci)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>  2.5 % 97.5 %
+x 14.320 11.549</code></pre>
+<p>La inversión necesaria para calcular la edad cambia el orden de los límites. El intervalo de confianza del 95 % va de 11.5 a 14.3 miles de millones de años.</p>
+</section>
+<section id="análisis-bayesiano" class="level3" data-number="1.1.3">
+<h3 data-number="1.1.3" class="anchored" data-anchor-id="análisis-bayesiano"><span class="header-section-number">1.1.3</span> Análisis bayesiano</h3>
+<p>Podríamos darnos por satisfechos con el análisis anterior: tenemos una estimación puntual y una expresión de su incertidumbre. Sin embargo, al examinar los resultados con mayor detenimiento quizá sintamos cierta insatisfacción y estemos dispuestos a considerar otro método.</p>
+<p>Resulta tentador interpretar el intervalo de confianza como una afirmación de que existe un 95 % de probabilidad de que la edad del universo esté entre 11.5 y 14.3 miles de millones de años. Pero esto no es en absoluto lo que sostiene la teoría utilizada para construirlo. Esta teoría —denominada a veces frecuentista y otras veces inferencia clásica— considera que los parámetros son cantidades fijas, aunque por lo general desconocidas. Por ello, dentro de esta teoría carece de sentido asignar probabilidades a los parámetros. El 95 % de confianza se refiere al intervalo, no al parámetro: se afirma que el procedimiento produce intervalos que cubren el verdadero valor del parámetro en el 95 % de los casos.</p>
+<p>Podría objetarse que los datos ya se observaron y se conocen, por lo que el intervalo dejó de ser aleatorio. Para responder hay que construir un argumento más elaborado. Imaginamos un número ilimitado de universos alternativos cuyas galaxias se generan según el modelo lineal anterior. Para cada universo calculamos un intervalo de confianza del mismo modo. En el 95 % de esos universos, el intervalo contendrá la verdadera edad del universo.</p>
+<p>La mayoría de las personas no se detiene en esta peculiar naturaleza del intervalo de confianza y lo interpreta como una afirmación probabilística sobre la edad del universo. En la práctica, esto casi nunca importa demasiado, aunque en ocasiones sí marca una diferencia.</p>
+<p>En la estadística bayesiana consideramos aleatorios los parámetros. Antes de ajustar el modelo expresamos nuestra incertidumbre mediante una probabilidad previa. Después usamos el teorema de Bayes para calcular una probabilidad posterior sobre los parámetros, combinando la previa con la verosimilitud de los datos bajo el modelo. Más adelante explicaremos exactamente cómo se hace. Este método permite formular afirmaciones probabilísticas directas sobre la edad del universo y ofrece otras ventajas.</p>
+</section>
+<section id="inla" class="level3" data-number="1.1.4">
+<h3 data-number="1.1.4" class="anchored" data-anchor-id="inla"><span class="header-section-number">1.1.4</span> INLA</h3>
+<p>Los cálculos bayesianos suelen ser mucho más difíciles que los frecuentistas. Esta es la razón principal por la que, históricamente, los métodos clásicos se prefirieron a los bayesianos. Ahora que la computación es potente y económica, podemos realizar esos cálculos con mayor facilidad. En unos cuantos modelos sencillos, como el ejemplo de Hubble, los cálculos pueden hacerse de manera exacta. En problemas más complejos debemos escoger entre dos clases de metodología computacional: simulación o aproximación.</p>
+<p>INLA, siglas de <em>Integrated Nested Laplace Approximation</em>, es un método de aproximación. Veamos cómo funciona en el ejemplo de Hubble. Primero cargamos el paquete:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(INLA)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Para ajustar un modelo bayesiano debemos especificar algo más que su forma estructural, aquí <code>y ~ x - 1</code>; <code>-1</code> indica que debe omitirse el intercepto, incluido por defecto. También debemos especificar las distribuciones previas de los parámetros. En este modelo tenemos dos: <span class="math inline">\(\beta\)</span> y <span class="math inline">\(\sigma\)</span>. En ocasiones podemos confiar en la opción predeterminada, que procura ser no informativa; así lo haremos para <span class="math inline">\(\sigma\)</span>. Los valores predeterminados y la elección de previas se estudiarán con detalle más adelante. Por ahora nos concentraremos en <span class="math inline">\(\beta\)</span>.</p>
+<p>INLA se aplica a una amplia clase denominada modelos gaussianos latentes. Pertenecer a esta clase exige que ciertos parámetros tengan distribuciones previas gaussianas. Más adelante veremos cuáles deben ser gaussianos; en nuestro modelo necesitamos una previa gaussiana para <span class="math inline">\(\beta\)</span>. Por defecto tiene media cero, que conservaremos. INLA suele expresar la dispersión mediante la precisión, inversa de la varianza. Valores grandes representan mucha certeza. Aquí sabemos muy poco, por lo que elegimos una precisión muy pequeña. El significado de «muy pequeña» depende de la escala de los datos. Estandarizarlos puede evitar el problema, pero en este ejemplo exigiría deshacer después la estandarización al calcular la edad. Por ello mantenemos la escala original y elegimos una precisión suficientemente pequeña.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>imod <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> x <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.fixed =</span> <span class="fu">list</span>(<span class="at">prec =</span> <span class="fl">1e-09</span>),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> hubble</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Primero indicamos la parte estructural con la notación usual de modelos de R. Después fijamos una distribución para la respuesta; elegimos la gaussiana, aunque la respuesta no tiene que ser gaussiana para que el modelo pertenezca a la clase latente gaussiana. Podríamos elegir binomial, Poisson o muchas otras. A continuación especificamos la previa de <span class="math inline">\(\beta\)</span>, el parámetro «fijo». Este término resulta algo engañoso en un contexto bayesiano, pues los parámetros no suelen estar fijos; procede de los modelos de efectos mixtos, estudiados en el capítulo 5. Bajo esa terminología igualmente problemática, <span class="math inline">\(\sigma^2\)</span> es el componente aleatorio, para el cual usamos la previa predeterminada. Para <span class="math inline">\(\beta\)</span> conservamos la media predeterminada cero y fijamos una precisión de <span class="math inline">\(10^{-9}\)</span>. Finalmente indicamos dónde se encuentran los datos.</p>
+<p>El modelo y el conjunto de datos son pequeños, de modo que el cálculo es prácticamente instantáneo. Se obtienen muchas cantidades; aquí nos concentramos en la distribución posterior de <span class="math inline">\(\beta\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>(ibci <span class="ot">&lt;-</span> imod<span class="sc">$</span>summary.fixed)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>    mean     sd 0.025quant 0.5quant 0.975quant   mode       kld
+x 76.581 3.7638     69.152   76.581       84.0 76.581 1.406e-11</code></pre>
+<p>Se proporcionan varios estadísticos de resumen. <code>kld</code> es un diagnóstico de la precisión de la aproximación INLA; valores pequeños, como este, son favorables. Si reproduce el ejemplo, no espere exactamente los mismos números, por razones explicadas en la sección 2.4 de la obra original. También podemos graficar la densidad posterior de <span class="math inline">\(\beta\)</span>. Los comandos necesarios para extraer y representar elementos de la salida de INLA pueden ser complejos, por lo que posponemos su explicación.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(imod<span class="sc">$</span>marginals.fixed<span class="sc">$</span>x, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"beta"</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"density"</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">60</span>, <span class="dv">100</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> ibci[<span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">5</span>)], <span class="at">lty =</span> <span class="dv">2</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>La densidad posterior expresa nuestra incertidumbre sobre la constante de Hubble después de incorporar los datos de las 24 galaxias. El valor más probable ronda 75 y es improbable que sea menor que 70 o mayor que 90. La media, la mediana y la moda coinciden aquí con la estimación de mínimos cuadrados, 76.581.</p>
+<p>Podemos expresar la incertidumbre mediante un intervalo que contenga el 95 % de la probabilidad. Una forma sencilla consiste en usar los percentiles 2.5 y 97.5, que producen <span class="math inline">\([69.2,84.0]\)</span>. Se denomina intervalo de credibilidad para distinguirlo de un intervalo de confianza. Ahora sí afirmamos que hay una probabilidad del 95 % de que la constante de Hubble se encuentre dentro del intervalo.</p>
+<div id="fig-hubble-posteriores" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hubble-posteriores-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="figuras/hubble-posteriores.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hubble-posteriores-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figura&nbsp;1.2: Densidad posterior de <span class="math inline">\(\beta\)</span> (izquierda) y de la edad del universo (derecha). Las líneas discontinuas muestran intervalos de credibilidad del 95 %.
+</figcaption>
+</figure>
+</div>
+<p>Los resultados pueden transformarse a la escala de la edad del universo:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hubtoage</span>(ibci[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>)])</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>   mean 0.025quant 0.5quant 0.975quant   mode
+x 12.786     14.160   12.786     11.657 12.786</code></pre>
+<p>Omitimos el error estándar porque transformarlo correctamente requiere más trabajo. La densidad y su intervalo se muestran en la <a href="#fig-hubble-posteriores" class="quarto-xref">Figura&nbsp;<span>1.2</span></a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ageden <span class="ot">&lt;-</span> <span class="fu">inla.tmarginal</span>(hubtoage, imod<span class="sc">$</span>marginals.fixed<span class="sc">$</span>x)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ageden, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"Age in billions of years"</span>,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"density"</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">hubtoage</span>(ibci[<span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">5</span>)]), <span class="at">lty =</span> <span class="dv">2</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>El intervalo de credibilidad del 95 % va de 11.7 a 14.2 miles de millones de años, ligeramente distinto del intervalo de confianza anterior.</p>
+<p>Usamos una previa no informativa, pero podríamos incorporar información previa. Sabemos, por ejemplo, que el universo se expande y esperamos que la constante de Hubble sea positiva. Antes del lanzamiento del telescopio espacial Hubble se pensaba que la edad del universo estaba entre 10 y 20 miles de millones de años. Llevemos esa información a la escala de la constante, recordando que <code>hubtoage()</code> funciona en sentido inverso por la naturaleza de la conversión:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hubtoage</span>(<span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">20</span>))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>[1] 97.916 65.277 48.958</code></pre>
+<p>Esto sugiere una media previa de, por ejemplo, 65. Supongamos que al expresar la incertidumbre mediante <span class="math inline">\([a,b]\)</span> se piensa, al menos implícitamente, en un intervalo de confianza o credibilidad del 95 %. Su anchura sería aproximadamente cuatro desviaciones estándar. Como aquí la anchura es 49, resulta razonable comenzar con una desviación estándar cercana a 12.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>imod <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> x <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.fixed =</span> <span class="fu">list</span>(<span class="at">mean =</span> <span class="dv">65</span>, <span class="at">prec =</span> <span class="dv">1</span><span class="sc">/</span>(<span class="dv">12</span><span class="sc">^</span><span class="dv">2</span>)),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> hubble</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>(ibci <span class="ot">&lt;-</span> imod<span class="sc">$</span>summary.fixed)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>    mean     sd 0.025quant 0.5quant 0.975quant   mode        kld
+x 75.479 3.7292     67.981   75.522     82.729 75.596 1.1216e-11</code></pre>
+<p>Al convertir a la escala de la edad se obtiene una predicción un poco mayor, pues la media previa de 15 mil millones de años supera la estimación de mínimos cuadrados. Aun así, los resultados no difieren mucho. Preferimos que no sean demasiado sensibles a la elección de previa. Aunque aceptemos su inevitable subjetividad, es deseable coincidir con analistas que elijan otras previas. Con una cantidad razonable de datos, la previa tendrá poco efecto. El teorema de Bernstein–von Mises ofrece cierto respaldo teórico a esta observación empírica <span class="citation" data-cites="lecam2012">(véase <a href="#ref-lecam2012" role="doc-biblioref">Le Cam 2012</a>)</span>.</p>
+<p>¿Qué ocurre si la previa contradice por completo a los datos? Según la cronología de Ussher, el universo fue creado el 22 de octubre de 4004 a. C. Otros autores contemporáneos, entre ellos Isaac Newton, discreparon de Ussher, pero sus estimaciones se situaban a unos pocos cientos de años de esa fecha. Bajo dicha cronología, la constante de Hubble sería:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>(uhub <span class="ot">&lt;-</span> <span class="fu">hubtoage</span>((<span class="dv">2016</span> <span class="sc">+</span> <span class="dv">4004</span> <span class="sc">-</span> <span class="dv">1</span>)<span class="sc">/</span><span class="fl">1e+09</span>))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<pre class="text"><code>[1] 162678504</code></pre>
+<p>Esto produce un valor enorme. El texto original propone usarlo como media previa y suponer una variación del 5 % en las estimaciones de la edad. Sin embargo, el bloque de código impreso repite por error la previa anterior (<code>mean = 65</code>, <code>prec = 1/(12^2)</code>); se conserva a continuación para mantener fidelidad documental.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>imod <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> x <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.fixed =</span> <span class="fu">list</span>(<span class="at">mean =</span> <span class="dv">65</span>, <span class="at">prec =</span> <span class="dv">1</span><span class="sc">/</span>(<span class="dv">12</span><span class="sc">^</span><span class="dv">2</span>)),</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> hubble</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>(ibci <span class="ot">&lt;-</span> imod<span class="sc">$</span>summary.fixed)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>El resultado vuelve a ser muy similar al de la previa no informativa. La distribución normal asigna peso a toda la recta real. Aunque las probabilidades de valores muy alejados de la media sean minúsculas, no son cero, lo que permite que los datos superen una previa inusual.</p>
+<p>En algunos casos, la previa puede ser tan incompatible con los datos que surjan dificultades computacionales y resultados extraños. Se habla entonces de conflictos entre datos y previa, aunque también debe considerarse la posibilidad de que el propio modelo sea muy erróneo; véase <span class="citation" data-cites="evans2006">Evans y Moshonov (<a href="#ref-evans2006" role="doc-biblioref">2006</a>)</span>. Antes de explorar más aplicaciones de INLA necesitamos desarrollar algo de teoría.</p>
+</section>
+</section>
+<section id="teoría-de-bayes" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="teoría-de-bayes"><span class="header-section-number">1.2</span> Teoría de Bayes</h2>
+<p>No intentaremos ofrecer aquí una introducción completa a la teoría bayesiana. Remitimos a <span class="citation" data-cites="gelman2014">Gelman et&nbsp;al. (<a href="#ref-gelman2014" role="doc-biblioref">2014</a>)</span> y <span class="citation" data-cites="carlin2008">Carlin y Louis (<a href="#ref-carlin2008" role="doc-biblioref">2008</a>)</span>. Solo haremos un recorrido breve por las ideas y métodos necesarios más adelante. Quien ya tenga experiencia bayesiana puede pasar al capítulo siguiente.</p>
+<p>Partimos de un modelo paramétrico <span class="math inline">\(p(\mathbf y\mid\boldsymbol\theta)\)</span> para los datos <span class="math inline">\(\mathbf y\)</span>, con parámetros <span class="math inline">\(\boldsymbol\theta\)</span>. Proponemos el modelo de acuerdo con la estructura de los datos, la información sobre su recolección y el conocimiento de su contexto. Existe incertidumbre sobre los parámetros, que esperamos reducir con los datos, y casi siempre también sobre el propio modelo. Rara vez creemos que sea completamente verdadero; esperamos que constituya una aproximación eficaz a la realidad para el propósito previsto. Por ello es razonable considerar modelos alternativos y comprobar si el elegido resulta adecuado para los datos observados.</p>
+<p>En vez de ver <span class="math inline">\(p(\mathbf y\mid\boldsymbol\theta)\)</span> como función de <span class="math inline">\(\mathbf y\)</span>, podemos verla como función de <span class="math inline">\(\boldsymbol\theta\)</span>. Esta verosimilitud <span class="math inline">\(L(\boldsymbol\theta)\)</span> representa nuestra incertidumbre acerca de <span class="math inline">\(\boldsymbol\theta\)</span>, pero es importante entender que no constituye una densidad de probabilidad para ese parámetro.</p>
+<p>En el enfoque frecuentista buscamos estimar <span class="math inline">\(\boldsymbol\theta\)</span>. La forma natural y más habitual consiste en hallar los valores más verosímiles maximizando <span class="math inline">\(L(\boldsymbol\theta)\)</span>; se obtiene así la estimación de máxima verosimilitud (MLE). Esta posee muchas propiedades favorables y permite derivar cantidades útiles como errores estándar e intervalos de confianza. En casos sencillos se calcula explícitamente; por lo general requiere optimización numérica. En muchos modelos comunes estos métodos están bien comprendidos y son eficientes, aunque en modelos más complejos pueden volverse problemáticos. Pese a ello, la principal razón para preferir métodos bayesianos no es computacional, pues suelen ser más lentos: las respuestas de un análisis bayesiano son conceptualmente diferentes.</p>
+<p>Para el frecuentismo, <span class="math inline">\(\boldsymbol\theta\)</span> es fijo pero desconocido y los datos sirven para estimarlo. Para el bayesianismo, los parámetros son variables aleatorias. Antes de observar los datos expresamos la incertidumbre mediante una densidad previa <span class="math inline">\(\pi(\boldsymbol\theta)\)</span>. Actualizamos esa incertidumbre con los datos y el modelo para producir la densidad posterior <span class="math inline">\(p(\boldsymbol\theta\mid\mathbf y)\)</span>. El teorema de Bayes proporciona la transformación:</p>
+<p><span class="math display">\[
+p(\boldsymbol\theta\mid\mathbf y)
+=\frac{p(\mathbf y\mid\boldsymbol\theta)\pi(\boldsymbol\theta)}{p(\mathbf y)}.
+\]</span></p>
+<p>En palabras,</p>
+<p><span class="math display">\[
+\text{Posterior}\ \propto\ \text{Verosimilitud}\times\text{Previa}.
+\]</span></p>
+<p>Aunque el concepto es sencillo, debemos calcular la constante normalizadora</p>
+<p><span class="math display">\[
+p(\mathbf y)=\int p(\mathbf y\mid\boldsymbol\theta)\pi(\boldsymbol\theta)\,d\boldsymbol\theta,
+\]</span></p>
+<p>la probabilidad marginal de los datos bajo el modelo. Integrales como esta explican por qué la sencillez conceptual del teorema exige más trabajo del que parece.</p>
+</section>
+<section id="distribuciones-previas-y-posteriores" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="distribuciones-previas-y-posteriores"><span class="header-section-number">1.3</span> Distribuciones previas y posteriores</h2>
+<p>Especificar la previa es una parte importante y quizá la más débil de un análisis bayesiano, pues sus críticos pueden cuestionar razonablemente cualquier elección. Cuando las conclusiones son polémicas, defender una previa particular puede ser difícil. Cabe responder que la elección del modelo también suele ser subjetiva y no siempre admite una justificación firme, de modo que un análisis frecuentista tampoco puede pretender objetividad total. Casi todo análisis contiene cierta subjetividad; el enfoque bayesiano simplemente hace explícitas sus decisiones.</p>
+<p>La mejor motivación para una previa es el conocimiento sustantivo sobre <span class="math inline">\(\boldsymbol\theta\)</span>. A veces procede de la opinión experta, que quizá deba formularse matemáticamente, y otras de experiencias anteriores con datos similares. Incluso puede utilizarse como previa la posterior de un experimento previo. Estas previas se denominan informativas o sustantivas. Si la información está disponible, sin duda debería aprovecharse. Cuando no lo está, necesitamos otra base para decidir.</p>
+<p>Una opción especialmente cómoda es la previa conjugada: previa y posterior pertenecen a la misma familia y existe una fórmula explícita para los parámetros posteriores en función de los parámetros previos y los datos. Por ejemplo, para una muestra normal univariada, una previa normal sobre la media —con varianza conocida— produce una posterior normal. Antes de disponer de cómputo rápido, esta elección era muy recomendable. Sin embargo, solo existe para un puñado de modelos sencillos y su conveniencia no constituye una razón sustantiva para preferirla frente a otras alternativas razonables.</p>
+<p>Cuando no se dispone de información firme, puede desearse una elección «segura» sin consecuencias fuertes. Ese deseo es comprensible, pero sorprendentemente difícil de satisfacer. La opción aparentemente más directa es la previa plana:</p>
+<p><span class="math display">\[
+\pi(\boldsymbol\theta)\propto 1.
+\]</span></p>
+<p>No favorece en apariencia ningún valor particular, pero no es una densidad propia, salvo que <span class="math inline">\(\boldsymbol\theta\)</span> tenga rango finito, porque no integra a un valor finito. A menudo podemos proceder normalizando la verosimilitud como densidad; a veces el resultado es satisfactorio y otras veces irrazonable. Resulta difícil delimitar exactamente cuándo falla, por lo que conviene ser escéptico ante posteriores derivadas de previas planas.</p>
+<p>Además, la planitud depende de la escala. Si <span class="math inline">\(\sigma\)</span> es la desviación estándar y <span class="math inline">\(\sigma^2\)</span> la varianza de una normal, elegir <span class="math inline">\(\pi(\sigma)\propto1\)</span> no equivale a elegir <span class="math inline">\(\pi(\sigma^2)\propto1\)</span>. Ser plana en una escala implica ser informativa en otra. Esta falta de invariancia afecta a otros intentos de obtener previas no informativas. Una posible solución es la previa de Jeffreys:</p>
+<p><span class="math display">\[
+\pi(\boldsymbol\theta)\propto |I(\boldsymbol\theta)|^{1/2}.
+\]</span></p>
+<p>Es invariante ante reparametrizaciones, pero produce resultados poco razonables en algunos modelos y no es una solución universal. Las previas objetivas intentan reducir la subjetividad, aunque eliminar el juicio humano parece irreal. En algunas clases de problemas se han consolidado elecciones habituales. Seguirlas protege de ciertas críticas de arbitrariedad, pero pueden ser meras costumbres sin justificación más sólida.</p>
+<p>INLA ofrece un menú limitado de previas preprogramadas, aunque permite definir otras. Además, veremos que al menos algunos parámetros están restringidos a una previa gaussiana. Para aquellos donde sí existe elección, <span class="citation" data-cites="simpson2017">Simpson et&nbsp;al. (<a href="#ref-simpson2017" role="doc-biblioref">2017</a>)</span> formula principios generales de construcción implementados en INLA.</p>
+<p>Aunque una postura bayesiana muy ortodoxa exige elegir la previa una sola vez antes de ver los datos, hay buenas razones para experimentar con alternativas razonables. Si las conclusiones son cualitativamente semejantes, aumenta nuestra confianza; si resultan muy sensibles, debemos moderar nuestras afirmaciones. A esta propiedad se la denomina <em>sensibilidad a la previa</em>, y deseamos que sea pequeña.</p>
+<p>Las posteriores son menos problemáticas, pues quedan completamente determinadas por la previa y la verosimilitud. No obstante, comprenderlas no siempre es sencillo. <span class="math inline">\(p(\boldsymbol\theta\mid\mathbf y)\)</span> suele ser multivariante y, a veces, de dimensión muy elevada. Como es difícil visualizarla, a menudo examinamos la distribución marginal de un parámetro <span class="math inline">\(\theta_i\)</span>:</p>
+<p><span class="math display">\[
+p(\theta_i\mid\mathbf y)=\int p(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta_{-i},
+\]</span></p>
+<p>donde <span class="math inline">\(\boldsymbol\theta_{-i}\)</span> denota <span class="math inline">\(\boldsymbol\theta\)</span> sin su componente <span class="math inline">\(i\)</span>. Esto requiere integración multidimensional. En una normal multivariante es sencillo; en otras situaciones puede ser exigente.</p>
+<p>Es buena práctica graficar las posteriores marginales. También pueden resumirse con media, mediana y moda. En distribuciones aproximadamente simétricas apenas difieren; en distribuciones sesgadas conviene entender sus distinciones y observar la densidad. La dispersión puede resumirse mediante la desviación estándar o cuantiles seleccionados.</p>
+<p>Los cuantiles 2.5 y 97.5 forman un intervalo de credibilidad del 95 %. A diferencia del intervalo de confianza frecuentista, este sí afirma que el parámetro se encuentra en el intervalo con una probabilidad especificada. Los intervalos de credibilidad no son únicos: los cuantiles son fáciles de calcular, pero también puede buscarse el intervalo más corto que contenga la probabilidad indicada. Se denomina intervalo de máxima densidad posterior (HPD) y puede calcularse con <code>inla.hpdmarginal()</code>.</p>
+</section>
+<section id="comprobación-del-modelo" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="comprobación-del-modelo"><span class="header-section-number">1.4</span> Comprobación del modelo</h2>
+<p>La distribución predictiva de una observación futura <span class="math inline">\(z\)</span> es</p>
+<p><span class="math display">\[
+p(z\mid\mathbf y)=\int p(z\mid\boldsymbol\theta)p(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta.
+\]</span></p>
+<p>Además de servir para predecir, permite comprobar el modelo. La ordenada predictiva condicional (CPO), introducida por <span class="citation" data-cites="pettit1990">Pettit (<a href="#ref-pettit1990" role="doc-biblioref">1990</a>)</span>, se define como</p>
+<p><span class="math display">\[
+\operatorname{CPO}_i=p(y_i\mid\mathbf y_{-i}),
+\]</span></p>
+<p>donde <span class="math inline">\(\mathbf y_{-i}\)</span> contiene todos los datos salvo la observación <span class="math inline">\(i\)</span>. La CPO mide la probabilidad o densidad del valor observado <span class="math inline">\(y_i\)</span>; valores especialmente pequeños señalan observaciones inusuales que el modelo no explica bien. Algunas observaciones son tan influyentes que alteran mucho el ajuste; por ello se excluye la propia observación al calcular la CPO. Parecería necesario reajustar el modelo para cada caso, pero existen atajos eficaces que reducen notablemente el costo <span class="citation" data-cites="held2010">(<a href="#ref-held2010" role="doc-biblioref">Held, Schrödle, y Rue 2010</a>)</span>.</p>
+<p>La transformación integral de probabilidad (PIT), introducida por <span class="citation" data-cites="dawid1984">Dawid (<a href="#ref-dawid1984" role="doc-biblioref">1984</a>)</span>, es semejante:</p>
+<p><span class="math display">\[
+\operatorname{PIT}_i=P(Y_i&lt;y_i\mid\mathbf y_{-i}).
+\]</span></p>
+<p>Tiene mayor sentido para una respuesta continua. Con un buen modelo, las PIT del conjunto de datos deberían distribuirse aproximadamente de manera uniforme. Valores cercanos a cero o uno indican observaciones mucho menores o mayores, respectivamente, de lo esperado. INLA también dispone de formas económicas de calcularlas.</p>
+</section>
+<section id="selección-del-modelo" class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="selección-del-modelo"><span class="header-section-number">1.5</span> Selección del modelo</h2>
+<p>A veces debemos elegir entre varios modelos propuestos. Necesitamos entonces un criterio que mida su concordancia con los datos. El más conocido es el criterio de información de Akaike:</p>
+<p><span class="math display">\[
+\operatorname{AIC}=-2\log p(\mathbf y\mid\widehat{\boldsymbol\theta}_{\mathrm{MLE}})+2k,
+\]</span></p>
+<p>donde <span class="math inline">\(k\)</span> es el número de parámetros. Se prefieren valores pequeños. La primera parte mide el ajuste; sin la segunda, los modelos grandes siempre serían favorecidos. La penalización prefiere modelos pequeños. Desde una perspectiva bayesiana hay dos problemas: el criterio se basa en la MLE y el conteo <span class="math inline">\(k\)</span> resulta problemático en modelos jerárquicos, cuyo número efectivo de parámetros no es evidente.</p>
+<p>Para modelos bayesianos podemos preferir el criterio de información de la devianza (DIC) de <span class="citation" data-cites="spiegelhalter2002">Spiegelhalter et&nbsp;al. (<a href="#ref-spiegelhalter2002" role="doc-biblioref">2002</a>)</span>, inspirado en AIC. Definimos la devianza:</p>
+<p><span class="math display">\[
+D(\boldsymbol\theta)=-2\log p(\mathbf y\mid\boldsymbol\theta).
+\]</span></p>
+<p>En un modelo bayesiano es una variable aleatoria, por lo que usamos la devianza esperada <span class="math inline">\(\bar D=E[D(\boldsymbol\theta)]\)</span> bajo la posterior como medida de ajuste. El número efectivo de parámetros es</p>
+<p><span class="math display">\[
+p_D=E[D(\boldsymbol\theta)]-D[E(\boldsymbol\theta)]
+=\bar D-D(\bar{\boldsymbol\theta}),
+\]</span></p>
+<p>y entonces</p>
+<p><span class="math display">\[
+\operatorname{DIC}=\bar D+p_D.
+\]</span></p>
+<p>Se calcula para cada modelo y se elige el menor; véase <span class="citation" data-cites="spiegelhalter2014">Spiegelhalter et&nbsp;al. (<a href="#ref-spiegelhalter2014" role="doc-biblioref">2014</a>)</span>. Una alternativa es el criterio de información de Watanabe–Akaike (WAIC) <span class="citation" data-cites="watanabe2010">(<a href="#ref-watanabe2010" role="doc-biblioref">Watanabe 2010</a>)</span>, construido con un enfoque más plenamente bayesiano. <span class="citation" data-cites="gelman2014">Gelman et&nbsp;al. (<a href="#ref-gelman2014" role="doc-biblioref">2014</a>)</span> sostiene que WAIC es preferible a DIC y explica por qué el denominado criterio de información bayesiano (BIC) no es comparable con los anteriores.</p>
+<p>Finalmente, cabe preguntar por qué elegir un solo modelo cuando podemos aprovechar la información de todos. Podemos asignar una probabilidad previa a cada uno, actualizarla a una probabilidad posterior y combinar la información para realizar inferencias o predicciones. Esta idea se denomina promediado bayesiano de modelos <span class="citation" data-cites="draper1995">(<a href="#ref-draper1995" role="doc-biblioref">Draper 1995</a>)</span>.</p>
+</section>
+<section id="contraste-de-hipótesis" class="level2" data-number="1.6">
+<h2 data-number="1.6" class="anchored" data-anchor-id="contraste-de-hipótesis"><span class="header-section-number">1.6</span> Contraste de hipótesis</h2>
+<p>En el enfoque frecuentista, la hipótesis nula <span class="math inline">\(H_0\)</span> suele ser un solo punto y la alternativa <span class="math inline">\(H_1\)</span>, todo lo demás. Se propone un estadístico y se calcula, bajo <span class="math inline">\(H_0\)</span>, la probabilidad de observar un valor igual o más extremo que el obtenido: el valor <span class="math inline">\(p\)</span>. Aunque se interpreta así con frecuencia, no es la probabilidad de que <span class="math inline">\(H_0\)</span> sea verdadera. La práctica común declara un resultado «estadísticamente significativo» y rechaza <span class="math inline">\(H_0\)</span> si <span class="math inline">\(p&lt;0.05\)</span>; si no es pequeño, no se rechaza.</p>
+<p>Este procedimiento se denomina contraste de significación de la hipótesis nula (NHST). Existe un debate enorme que no repetiremos. Pese a las críticas, el NHST está firmemente arraigado en la práctica científica. Quien analiza datos necesita publicar y lograr que se acepten sus resultados, de modo que no puede ignorarlo. Conviene desarrollar respuestas comparables dentro del marco bayesiano, aunque su motivación sea distinta.</p>
+<p>Supongamos que deseamos comparar <span class="math inline">\(H_0\)</span> y <span class="math inline">\(H_1\)</span>, con probabilidades previas <span class="math inline">\(p(H_0)\)</span> y <span class="math inline">\(p(H_1)\)</span>. Entonces</p>
+<p><span class="math display">\[
+\frac{p(H_0\mid\mathbf y)}{p(H_1\mid\mathbf y)}
+=\frac{p(\mathbf y\mid H_0)}{p(\mathbf y\mid H_1)}
+\frac{p(H_0)}{p(H_1)}.
+\]</span></p>
+<p>El primer cociente del lado derecho es el factor de Bayes y el segundo, las <em>odds</em> previas. Las <em>odds</em> posteriores son su producto. Puede ser difícil especificar las <em>odds</em> previas, pero el factor de Bayes indica cuánto las modifican los datos. Podemos informarlo y permitir que cada lector decida según sus propias <em>odds</em>. Para calcularlo necesitamos las probabilidades marginales de cada modelo, precisamente las constantes normalizadoras empleadas al obtener las posteriores.</p>
+<p>El factor de Bayes evita comprometerse con previas sobre las hipótesis, pero aún requiere previas para ajustar ambos modelos, cuidadosamente elegidas para no favorecer a ninguno. A pesar de su atractivo filosófico, nunca se ha generalizado realmente en las publicaciones científicas.</p>
+<p>Con frecuencia <span class="math inline">\(H_0\)</span> impone <span class="math inline">\(\theta_k=0\)</span>. Si la previa es continua, la posterior también lo será y <span class="math inline">\(P(\theta_k=0)=0\)</span>. Podríamos usar una previa que asigne masa positiva al cero, pero habría que decidir cuánta y afrontar cálculos difíciles que mezclan componentes discretos y continuos. Además, en muchas aplicaciones no es razonable creer que un parámetro continuo sea exactamente igual a un valor específico.</p>
+<p>Una solución es calcular <span class="math inline">\(P(|\theta_k|&lt;c)\)</span>, escogiendo <span class="math inline">\(c\)</span> tan grande como sea posible sin dejar de considerar despreciable a <span class="math inline">\(\theta_k\)</span>. El problema es justificar <span class="math inline">\(c\)</span>. Podríamos publicar la posterior marginal para que cada lector decida, aunque las publicaciones suelen exigir conclusiones más firmes.</p>
+<p>Podemos tomar prestada una idea frecuentista: contrastar <span class="math inline">\(H_0:\theta_k=0\)</span> comprobando si cero pertenece a un intervalo. Con una posterior relativamente simétrica y media positiva, un análogo del valor <span class="math inline">\(p\)</span> es</p>
+<p><span class="math display">\[
+p=2P(\theta_k&lt;0),
+\]</span></p>
+<p>usando la otra cola si la media es negativa. En realidad solo mide la posición del cero en la posterior, pero se parece a un valor <span class="math inline">\(p\)</span> y no sería irrazonable utilizarlo de forma análoga.</p>
+</section>
+<section id="computación-bayesiana" class="level2" data-number="1.7">
+<h2 data-number="1.7" class="anchored" data-anchor-id="computación-bayesiana"><span class="header-section-number">1.7</span> Computación bayesiana</h2>
+<p>La teoría es clara, pero calcular la posterior y otras cantidades de interés no siempre resulta fácil. Existen tres vías principales.</p>
+<section id="cálculo-exacto" class="level3" data-number="1.7.1">
+<h3 data-number="1.7.1" class="anchored" data-anchor-id="cálculo-exacto"><span class="header-section-number">1.7.1</span> Cálculo exacto</h3>
+<p>Una previa conjugada produce una posterior de la misma familia y suele permitir expresar explícitamente sus parámetros a partir de la previa y de alguna función de los datos. Solo hay un número reducido de previas conjugadas para modelos bastante sencillos, por lo general sin covariables. Los modelos complejos reúnen parámetros de distintos tipos y varias previas, a menudo de familias diferentes, por lo que no puede alcanzarse la conjugación.</p>
+<p>Históricamente, estos eran casi los únicos modelos que admitían un análisis bayesiano completo, lo que limitó seriamente su adopción. Con la computación actual podemos considerar muchos más modelos y la conjugación ha quedado como una cuestión secundaria: cómoda para exámenes de licenciatura, pero de utilidad práctica limitada.</p>
+<p>Como la posterior es proporcional al producto de verosimilitud y previa, para hallar su moda basta maximizar dicho producto sin conocer la constante normalizadora. Se obtiene el estimador máximo a posteriori (MAP). Con una previa plana coincide con la MLE. El método solo requiere optimización numérica, pero entrega una estimación puntual sin evaluar incertidumbre; es, como mucho, una solución parcial.</p>
+</section>
+<section id="muestreo" class="level3" data-number="1.7.2">
+<h3 data-number="1.7.2" class="anchored" data-anchor-id="muestreo"><span class="header-section-number">1.7.2</span> Muestreo</h3>
+<p>Los métodos basados en muestreo buscan generar muestras de la distribución posterior. Aunque existen varios esquemas para modelos sencillos, los principales generan una cadena de Markov cuya distribución estacionaria es la posterior. La idea se remonta a <span class="citation" data-cites="metropolis1953">Metropolis et&nbsp;al. (<a href="#ref-metropolis1953" role="doc-biblioref">1953</a>)</span> y <span class="citation" data-cites="hastings1970">Hastings (<a href="#ref-hastings1970" role="doc-biblioref">1970</a>)</span>, y se difundió en estadística tras <span class="citation" data-cites="gelfand1990">Gelfand y Smith (<a href="#ref-gelfand1990" role="doc-biblioref">1990</a>)</span>. En conjunto se denominan métodos MCMC. Como este libro trata sobre un competidor de MCMC, no explicaremos su funcionamiento, sino solo las etapas generales de un análisis.</p>
+<p>Después de elegir modelo y previa y preparar los datos, podríamos derivar e implementar un método MCMC, pero lo habitual es usar un paquete que admita nuestra elección. Si nos limitamos a programas escritos en R o invocables desde R, hay muchas posibilidades.</p>
+<p>La vista de tareas bayesiana de CRAN enumera paquetes que implementan MCMC para clases concretas de modelos. Suelen llamarse desde R, aunque sus partes costosas estén escritas en un lenguaje compilado, normalmente C. Esto evita aprender otro lenguaje y mejora la velocidad, pero restringe el usuario a una clase estrecha de modelos y previas. Un ejemplo relativamente general es <code>MCMCglmm</code> <span class="citation" data-cites="hadfield2010">(<a href="#ref-hadfield2010" role="doc-biblioref">Hadfield 2010</a>)</span>, capaz de manejar una buena parte de los modelos de este libro.</p>
+<p>También existen programas generales que ajustan una amplia gama de modelos. Emplean un lenguaje especializado para especificar modelo y previa; se ejecutan por separado, aunque pueden invocarse desde R y devolver resultados. BUGS (<em>Bayesian inference Using Gibbs Sampling</em>), presentado en 1989, fue el primero; <span class="citation" data-cites="lunn2012">Lunn et&nbsp;al. (<a href="#ref-lunn2012" role="doc-biblioref">2012</a>)</span> ofrece una introducción. Evolucionó a WinBUGS y OpenBUGS. JAGS (<em>Just Another Gibbs Sampler</em>) es otra variante <span class="citation" data-cites="plummer2003">(<a href="#ref-plummer2003" role="doc-biblioref">Plummer 2003</a>)</span>. Más tarde apareció STAN <span class="citation" data-cites="stan2016">(<a href="#ref-stan2016" role="doc-biblioref">Stan Development Team 2016</a>)</span>. BayesX <span class="citation" data-cites="umlauf2015">(<a href="#ref-umlauf2015" role="doc-biblioref">Umlauf et&nbsp;al. 2015</a>)</span> es algo más específico y utiliza parcialmente MCMC.</p>
+<p>Un análisis MCMC comprende varias etapas:</p>
+<ol type="1">
+<li><p>Escribir código que especifique el modelo, la previa y la forma de transferir los datos. Para quien acostumbra ajustar modelos con una sola instrucción en R, esto exige aprendizaje y experiencia considerables.</p></li>
+<li><p>Elegir valores iniciales para la cadena. En principio, el inicio no debería importar demasiado, pero valores inverosímiles o desafortunados pueden impedir la convergencia. Es aconsejable experimentar con varios inicios y saber reconocer una cadena problemática. STAN utiliza cuatro conjuntos de valores iniciales aleatorios, precaución sensata con cualquier paquete.</p></li>
+<li><p>Ejecutar la cadena hasta alcanzar un estado estacionario. Las observaciones anteriores se descartan como valores de <em>burn-in</em> o calentamiento. Existen diagnósticos para decidir si se alcanzó la estacionariedad, aunque una cadena puede no visitar regiones plausibles del espacio y aun así parecer satisfactoria.</p></li>
+<li><p>Tener en cuenta la correlación positiva entre observaciones sucesivas. La muestra debe ser mayor que una muestra independiente. En ocasiones se «adelgaza», conservando solo cada <span class="math inline">\(n\)</span>-ésima observación; esto ahorra almacenamiento, pero no es una necesidad estadística.</p></li>
+<li><p>Recordar que el resultado es una muestra de la posterior, no la posterior misma. En principio permite estimar cualquier funcional; en la práctica hay que equilibrar costo y precisión. Estimar una media requiere menos simulaciones que estimar un cuantil extremo.</p></li>
+</ol>
+<p>El aumento de la velocidad de cómputo y las mejoras de MCMC han ampliado la gama de modelos y tamaños de datos abordables. Aun así, algunas combinaciones fallan o exigen tiempos irrazonables. Incluso cuando un modelo puede ajustarse con paciencia, experimentar con muchos modelos puede resultar prohibitivo, lo que obstaculiza el estilo moderno de análisis.</p>
+<p>Debe reconocerse el enorme éxito de MCMC, pero conserva dos desventajas principales: es difícil de usar y es lento.</p>
+</section>
+<section id="aproximación" class="level3" data-number="1.7.3">
+<h3 data-number="1.7.3" class="anchored" data-anchor-id="aproximación"><span class="header-section-number">1.7.3</span> Aproximación</h3>
+<p>Las soluciones exactas se limitan casi siempre a modelos estrechos y sencillos con conjugación. Las soluciones aproximadas recurren a integración numérica. La principal dificultad es la elevada dimensión. En el capítulo siguiente se explica cómo la cuadratura y, en particular, la aproximación de Laplace producen aproximaciones precisas. En estadística, estos métodos parten del trabajo seminal de <span class="citation" data-cites="tierney1986">Tierney y Kadane (<a href="#ref-tierney1986" role="doc-biblioref">1986</a>)</span>. Además de INLA existen métodos como Bayes variacional.</p>
+<p>La ventaja de INLA frente a MCMC es su velocidad. En problemas grandes puede encontrar una solución donde MCMC tardaría demasiado. En problemas pequeños permite una construcción y comprobación de modelos más exploratoria e interactiva. En análisis frecuentistas la MLE suele obtenerse rápidamente, lo que permite dedicar atención a diagnósticos y a explorar el espacio de modelos. Esta exploración es crucial: acertar con el modelo importa más que el método de inferencia. Si cada ajuste cuesta demasiado, reduciremos la exploración. INLA es suficientemente rápido para explorar con libertad.</p>
+<p>INLA también es más fácil de usar. No hay otro lenguaje que aprender ni que navegar por los difíciles diagnósticos MCMC. En su mayor parte es no aleatorio, de modo que los análisis son más reproducibles. El resultado de MCMC es aleatorio; fijar la semilla lo reproduce, pero una réplica verdaderamente independiente será diferente. Una muestra grande mitiga el problema, pero no lo elimina.</p>
+<p>No conviene exagerar las ventajas de INLA. Los paquetes MCMC más generales cubren una gama de modelos más amplia de lo que INLA podrá abarcar. INLA se aplica a una clase extensa, pero limitada. Además, cuando los datos importan de verdad, es prudente asegurarse de que el análisis no dependa de una peculiaridad del programa empleado. Una vez elegido un modelo con INLA, vale la pena repetir el ajuste mediante MCMC. Si los resultados coinciden, tendremos mayor confianza cualitativa; si discrepan, será interesante averiguar por qué.</p>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-carlin2008" class="csl-entry" role="listitem">
+Carlin, Bradley P., y Thomas A. Louis. 2008. <em>Bayesian Methods for Data Analysis</em>. 3.ª ed. CRC Press.
+</div>
+<div id="ref-dawid1984" class="csl-entry" role="listitem">
+Dawid, A. P. 1984. <span>«Statistical Theory: The Prequential Approach»</span>. <em>Journal of the Royal Statistical Society: Series A</em> 147: 278-92.
+</div>
+<div id="ref-draper1995" class="csl-entry" role="listitem">
+Draper, David. 1995. <span>«Assessment and Propagation of Model Uncertainty»</span>. <em>Journal of the Royal Statistical Society: Series B</em> 57: 45-97.
+</div>
+<div id="ref-evans2006" class="csl-entry" role="listitem">
+Evans, Michael, y Hadas Moshonov. 2006. <span>«Checking for Prior-Data Conflict»</span>. <em>Bayesian Analysis</em> 1: 893-914.
+</div>
+<div id="ref-freedman2001" class="csl-entry" role="listitem">
+Freedman, Wendy L. et&nbsp;al. 2001. <span>«Final Results from the Hubble Space Telescope Key Project to Measure the Hubble Constant»</span>. <em>The Astrophysical Journal</em> 553: 47-72.
+</div>
+<div id="ref-gelfand1990" class="csl-entry" role="listitem">
+Gelfand, Alan E., y Adrian F. M. Smith. 1990. <span>«Sampling-Based Approaches to Calculating Marginal Densities»</span>. <em>Journal of the American Statistical Association</em> 85: 398-409.
+</div>
+<div id="ref-gelman2014" class="csl-entry" role="listitem">
+Gelman, Andrew, John B. Carlin, Hal S. Stern, David B. Dunson, Aki Vehtari, y Donald B. Rubin. 2014. <em>Bayesian Data Analysis</em>. 3.ª ed. CRC Press.
+</div>
+<div id="ref-hadfield2010" class="csl-entry" role="listitem">
+Hadfield, Jarrod D. 2010. <span>«MCMC Methods for Multi-response Generalized Linear Mixed Models: The MCMCglmm R Package»</span>. <em>Journal of Statistical Software</em> 33 (2): 1-22.
+</div>
+<div id="ref-hastings1970" class="csl-entry" role="listitem">
+Hastings, W. K. 1970. <span>«Monte Carlo Sampling Methods Using Markov Chains and Their Applications»</span>. <em>Biometrika</em> 57: 97-109.
+</div>
+<div id="ref-held2010" class="csl-entry" role="listitem">
+Held, Leonhard, Birgit Schrödle, y Håvard Rue. 2010. <span>«Posterior and Cross-validatory Predictive Checks: A Comparison of MCMC and INLA»</span>. <em>Statistical Modelling</em> 10: 397-419.
+</div>
+<div id="ref-lecam2012" class="csl-entry" role="listitem">
+Le Cam, Lucien. 2012. <em>Asymptotic Methods in Statistical Decision Theory</em>. Springer.
+</div>
+<div id="ref-lunn2012" class="csl-entry" role="listitem">
+Lunn, David, Christopher Jackson, Nicky Best, Andrew Thomas, y David Spiegelhalter. 2012. <em>The BUGS Book</em>. CRC Press.
+</div>
+<div id="ref-metropolis1953" class="csl-entry" role="listitem">
+Metropolis, Nicholas, Arianna W. Rosenbluth, Marshall N. Rosenbluth, Augusta H. Teller, y Edward Teller. 1953. <span>«Equation of State Calculations by Fast Computing Machines»</span>. <em>The Journal of Chemical Physics</em> 21: 1087-92.
+</div>
+<div id="ref-pettit1990" class="csl-entry" role="listitem">
+Pettit, L. I. 1990. <span>«The Conditional Predictive Ordinate for the Normal Distribution»</span>. <em>Journal of the Royal Statistical Society: Series B</em> 52: 175-84.
+</div>
+<div id="ref-plummer2003" class="csl-entry" role="listitem">
+Plummer, Martyn. 2003. <span>«JAGS: A Program for Analysis of Bayesian Graphical Models Using Gibbs Sampling»</span>.
+</div>
+<div id="ref-simpson2017" class="csl-entry" role="listitem">
+Simpson, Daniel, Håvard Rue, Andrea Riebler, Thiago G. Martins, y Sigrunn H. Sørbye. 2017. <span>«Penalising Model Component Complexity: A Principled, Practical Approach to Constructing Priors»</span>. <em>Statistical Science</em> 32: 1-28.
+</div>
+<div id="ref-spiegelhalter2002" class="csl-entry" role="listitem">
+Spiegelhalter, David J., Nicola G. Best, Bradley P. Carlin, y Angelika van der Linde. 2002. <span>«Bayesian Measures of Model Complexity and Fit»</span>. <em>Journal of the Royal Statistical Society: Series B</em> 64: 583-639.
+</div>
+<div id="ref-spiegelhalter2014" class="csl-entry" role="listitem">
+———. 2014. <span>«The Deviance Information Criterion: 12 Years On»</span>. <em>Journal of the Royal Statistical Society: Series B</em> 76: 485-93.
+</div>
+<div id="ref-stan2016" class="csl-entry" role="listitem">
+Stan Development Team. 2016. <em>Stan Modeling Language Users Guide and Reference Manual</em>.
+</div>
+<div id="ref-tierney1986" class="csl-entry" role="listitem">
+Tierney, Luke, y Joseph B. Kadane. 1986. <span>«Accurate Approximations for Posterior Moments and Marginal Densities»</span>. <em>Journal of the American Statistical Association</em> 81: 82-86.
+</div>
+<div id="ref-umlauf2015" class="csl-entry" role="listitem">
+Umlauf, Nikolaus, Daniel Adler, Thomas Kneib, Stefan Lang, y Achim Zeileis. 2015. <span>«Structured Additive Regression Models: An R Interface to BayesX»</span>. <em>Journal of Statistical Software</em> 63 (21): 1-46.
+</div>
+<div id="ref-watanabe2010" class="csl-entry" role="listitem">
+Watanabe, Sumio. 2010. <span>«Asymptotic Equivalence of Bayes Cross Validation and Widely Applicable Information Criterion»</span>. <em>Journal of Machine Learning Research</em> 11: 3571-94.
+</div>
+<div id="ref-wood2006" class="csl-entry" role="listitem">
+Wood, Simon N. 2006. <em>Generalized Additive Models: An Introduction with R</em>. Chapman; Hall/CRC.
+</div>
+</div>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./00-prefacio.html" class="pagination-link" aria-label="Prefacio">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Prefacio</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./02-teoria-inla.html" class="pagination-link" aria-label="Teoría de INLA">
+        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Teoría de INLA</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,2 +1,0 @@
-# traducciones
-Traducciones de documentos
