@@ -1,0 +1,233 @@
+# Regresión con error en las variables
+
+Los modelos de regresión ordinarios suponen que los predictores se observan sin error. Cuando no es así, las estimaciones pueden ser sesgadas e inconsistentes y las conclusiones, erróneas. Los modelos de error en las variables incorporan explícitamente la incertidumbre de medición de los predictores.
+
+## Introducción
+
+El problema aparece en numerosos campos: la ingesta habitual de grasas en epidemiología nutricional; las intensidades fluorescentes de microarreglos; la calibración entre laboratorios químicos; velocidades estelares con errores heteroscedásticos; y modelos de volatilidad estocástica en finanzas. Ignorar el error puede ocultar rasgos de los datos, reducir potencia y sesgar funciones y parámetros.
+
+En el modelo de error clásico se observa una aproximación $W$ al predictor latente $X$:
+
+$$W_i=X_i+U_i,$$
+
+con $E(U_i)=0$ e independencia entre $X_i$ y $U_i$, por lo que $E(W_i\mid X_i)=X_i$. En el error de Berkson, en cambio, el experimentador fija un objetivo $W_i$ y el valor realmente alcanzado es
+
+$$X_i=W_i+U_i.$$
+
+La dirección condicionante es esencial.
+
+Considérese el modelo lineal clásico
+
+$$
+Y_i=\beta_0+\beta_1X_i+\varepsilon_i,qquad
+W_i=X_i+U_i. \tag{10.1}
+$$
+
+Al sustituir $X_i=W_i-U_i$, el error compuesto es $\eta_i=\varepsilon_i-\beta_1U_i$ y está correlacionado con $W_i$. Si $\sigma_X^2$ y $\sigma_U^2$ son las varianzas, el límite del estimador ingenuo es
+
+$$
+\operatorname{plim}\widehat\beta_1=
+\beta_1\frac{\sigma_X^2}{\sigma_X^2+\sigma_U^2}.
+$$
+
+Este sesgo de atenuación acerca la pendiente a cero. En regresión múltiple, un solo predictor contaminado puede sesgar todos los coeficientes.
+
+## Modelos con error clásico
+
+Un GLMM general con un predictor latente adopta la forma
+
+$$
+\mu_i=h(\eta_i),\qquad
+\eta_i=\beta_0+\beta_xX_i+\mathbf x_i^\mathsf T\boldsymbol\alpha+
+\mathbf z_i^\mathsf T\boldsymbol\gamma,qquad
+W_i=X_i+U_i. \tag{10.2}
+$$
+
+$h$ es la inversa del enlace, $\mathbf x_i$ contiene predictores sin error y $\boldsymbol\gamma$ efectos aleatorios. Sin el último término se obtiene un GLM con error de medición.
+
+### Modelo lineal sencillo con heterocedasticidad
+
+Se completa el modelo con una distribución de exposición para el predictor:
+
+$$
+\begin{aligned}
+Y_i&=\beta_0+\beta_1X_i+\varepsilon_i,
+&\varepsilon_i&\sim N(0,\sigma_\varepsilon^2),\\
+W_i&=X_i+U_i,
+&U_i&\sim N(0,d_i\sigma_U^2),\\
+X_i&=\lambda+\xi_i,
+&\xi_i&\sim N(0,\sigma_X^2).
+\end{aligned} \tag{10.3}
+$$
+
+Los pesos conocidos $d_i$ permiten errores heteroscedásticos. En INLA se utiliza `model = "mec"`, cuyos hiperparámetros representan $\beta_1$, la precisión del error, la media de $X$ y su precisión.
+
+Se simulan 100 datos con $\beta_0=1$, $\beta_1=5$ y las tres precisiones iguales a uno:
+
+```{r}
+library(INLA)
+library(brinla)
+set.seed(5)
+n <- 100
+x <- rnorm(n)
+d <- runif(n, 0.5, 1.5)
+w <- x + rnorm(n, sd = 1 / sqrt(d))
+y <- 1 + 5 * x + rnorm(n)
+sim.data <- data.frame(y, w, d)
+
+naive <- inla(y ~ w, data = sim.data, family = "gaussian")
+```
+
+El modelo ingenuo estima una pendiente cercana a 2.28, cuyo intervalo creíble ni siquiera contiene el valor verdadero 5. Para corregirla se especifican priors e iniciales razonables —puede aprovecharse el ajuste ingenuo—:
+
+```{r}
+prior.beta <- c(0, 0.0001)
+prior.prec.u <- c(10, 10)
+prior.prec.x <- c(10, 10)
+prior.prec.y <- c(10, 10)
+init.prec.u <- 1
+init.prec.x <- 1 / (var(w) - 1)
+init.prec.y <- naive$summary.hyperpar$mean
+
+formula <- y ~ f(
+  w, model = "mec", scale = d, values = w,
+  hyper = list(
+    beta = list(prior = "gaussian", param = prior.beta,
+                fixed = FALSE),
+    prec.u = list(prior = "loggamma", param = prior.prec.u,
+                  initial = log(init.prec.u), fixed = FALSE),
+    mean.x = list(prior = "gaussian", initial = 0, fixed = TRUE),
+    prec.x = list(prior = "loggamma", param = prior.prec.x,
+                  initial = log(init.prec.x), fixed = FALSE)
+  )
+)
+
+corrected <- inla(
+  formula, data = sim.data, family = "gaussian",
+  control.family = list(hyper = list(
+    prec = list(param = prior.prec.y,
+                initial = log(init.prec.y), fixed = FALSE)
+  )),
+  control.fixed = list(mean.intercept = prior.beta[1],
+                       prec.intercept = prior.beta[2])
+)
+```
+
+`fixed` determina si se estima el hiperparámetro o se conserva su valor inicial. El ajuste corregido estima $\beta_1\approx5.15$, con intervalo aproximado $(4.26,6.12)$, y recupera bien el intercepto y las precisiones.
+
+### Modelo de exposición con mediciones replicadas
+
+Si existen réplicas $W_{ik}$ del mismo $X_i$,
+
+$$W_{ik}\mid X_i\sim N(X_i,\sigma_U^2),$$
+
+y el modelo de exposición puede depender de covariables sin error:
+
+$$X_i\mid\mathbf x_i\sim N(\lambda_0+\mathbf x_i^\mathsf T\boldsymbol\lambda,sigma_X^2).$$
+
+La representación jerárquica conjunta es
+
+$$
+\begin{aligned}
+E(Y_i)&=h(\beta_0+\beta_xX_i+\mathbf x_i^\mathsf T\boldsymbol\alpha+
+\mathbf z_i^\mathsf T\boldsymbol\gamma),\\
+W_{ik}&=X_i+U_{ik},\\
+0&=-X_i+\lambda_0+\mathbf x_i^\mathsf T\boldsymbol\lambda+\xi_i.
+\end{aligned} \tag{10.4}
+$$
+
+#### Estudio de Framingham
+
+Hay 1 615 hombres de 31 a 65 años y 128 casos de cardiopatía coronaria durante ocho años. Se usan edad, tabaquismo y presión sistólica transformada. Dos promedios de exámenes sucesivos son réplicas del nivel habitual latente:
+
+```{r}
+data(framingham, package = "brinla")
+fram <- subset(framingham, select = c(AGE, SMOKE, FIRSTCHD))
+fram$W1 <- log((framingham$SBP21 + framingham$SBP22) / 2 - 50)
+fram$W2 <- log((framingham$SBP31 + framingham$SBP32) / 2 - 50)
+fram$W <- (fram$W1 + fram$W2) / 2
+```
+
+Edad y tabaquismo intervienen tanto en la regresión logística de la enfermedad como en el modelo de exposición. Se aumenta la respuesta a una matriz de tres columnas: Bernoulli para enfermedad, gaussiana para la pseudoobservación cero del modelo de exposición y gaussiana para las dos réplicas. La función `copy` garantiza que el mismo $X_i$ se use en todos los componentes.
+
+```{r}
+n <- nrow(fram)
+Y <- matrix(NA, 4 * n, 3)
+Y[1:n, 1] <- fram$FIRSTCHD
+Y[n + 1:n, 2] <- 0
+Y[2 * n + 1:n, 3] <- fram$W1
+Y[3 * n + 1:n, 3] <- fram$W2
+
+beta.x <- c(1:n, rep(NA, 3 * n))
+idx.x <- c(rep(NA, n), rep(1:n, 3))
+weight.x <- c(rep(1, n), rep(-1, n), rep(1, 2 * n))
+```
+
+La fórmula esencial contiene dos efectos especiales:
+
+```{r}
+fram.formula <- Y ~
+  f(beta.x, copy = "idx.x",
+    hyper = list(beta = list(param = prior.beta, fixed = FALSE))) +
+  f(idx.x, weight.x, model = "iid", values = 1:n,
+    hyper = list(prec = list(initial = -15, fixed = TRUE))) +
+  beta.0 - 1 + beta.smoke + beta.age +
+  lambda.0 + lambda.smoke + lambda.age
+```
+
+La precisión casi nula fijada en el efecto iid evita duplicar la incertidumbre, pues ésta ya está descrita por el modelo de exposición. En la llamada a `inla()` se usa `family = c("binomial", "gaussian", "gaussian")` y una lista `control.family` en el mismo orden. `inla.hyperpar()` mejora la integración de los hiperparámetros, entre ellos el coeficiente del predictor contaminado.
+
+El coeficiente corregido de presión sistólica transformada es aproximadamente 1.96, con intervalo $(1.02,2.90)$; manteniendo lo demás fijo, una unidad multiplica las *odds* de enfermedad por $\exp(1.96)\approx7.08$. El modelo ingenuo produce 1.77, otra manifestación de la atenuación. Los efectos de edad y tabaquismo cambian muy poco.
+
+## Modelos con error de Berkson
+
+El GLMM correspondiente es
+
+$$
+\mu_i=h(\eta_i),\qquad
+\eta_i=\beta_0+\beta_xX_i+\mathbf x_i^\mathsf T\boldsymbol\alpha+
+\mathbf z_i^\mathsf T\boldsymbol\gamma,qquad
+X_i=W_i+U_i. \tag{10.5}
+$$
+
+Aquí $X_i\mid W_i\sim N(W_i,d_i\sigma_U^2)$; al condicionar en el objetivo observado ya no corresponde un modelo de exposición. La forma jerárquica es
+
+$$
+E(Y_i)=h(\eta_i),\qquad -W_i=-X_i+U_i. \tag{10.6}
+$$
+
+INLA la implementa mediante `model = "meb"`.
+
+### Bronquitis y exposición al polvo
+
+Se estudió bronquitis crónica en una planta de ingeniería de Múnich. La exposición verdadera al polvo no podía medirse exactamente; `dust` resume varias muestras, y también se registraron tabaquismo y duración. Se analizan 488 trabajadores por encima del umbral 1.28: alrededor de 30 % presenta bronquitis y 74 % fuma. La concentración media es 1.93, prácticamente independiente de tabaquismo y duración.
+
+El análisis requiere un prior razonablemente informativo para la varianza del error. Siguiendo el estudio original se toma una varianza inicial de 1.3:
+
+```{r}
+data(bronch, package = "brinla")
+bronch1 <- subset(bronch, dust >= 1.28)
+prior.beta <- c(0, 0.01)
+prec.u <- 1 / 1.3
+prior.prec.u <- c(1 / 1.3, 0.01)
+
+bronch.formula <- cbr ~ smoking + expo +
+  f(dust, model = "meb", hyper = list(
+    beta = list(param = prior.beta, fixed = FALSE),
+    prec.u = list(param = prior.prec.u,
+                  initial = log(prec.u), fixed = FALSE)
+  ))
+
+bronch.meb <- inla(
+  bronch.formula, data = bronch1, family = "binomial",
+  control.fixed = list(
+    mean.intercept = prior.beta[1], prec.intercept = prior.beta[2],
+    mean = prior.beta[1], prec = prior.beta[2]
+  )
+)
+bronch.meb <- inla.hyperpar(bronch.meb)
+```
+
+En el modelo ingenuo, el intervalo del efecto del polvo incluye cero. Tras corregir el error de Berkson, su media posterior es alrededor de 1.04 y el intervalo $(0.40,1.93)$: el efecto es positivo con probabilidad alta. También son positivos tabaquismo y duración.
+
+Los métodos bayesianos ofrecen gran flexibilidad para errores de medición, pero su implementación MCMC específica puede ser lenta y difícil de diagnosticar. Los componentes `mec`, `meb`, las respuestas múltiples y `copy` hacen accesibles con INLA modelos que de otro modo exigirían algoritmos especializados.

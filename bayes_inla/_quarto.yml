@@ -1,0 +1,57 @@
+project:
+  type: book
+  output-dir: _book
+
+lang: es
+
+book:
+  title: "Modelado de regresión bayesiana con INLA"
+  subtitle: "Traducción al español"
+  author:
+    - Xiaofeng Wang
+    - Yu Ryan Yue
+    - Julian J. Faraway
+  date: last-modified
+  chapters:
+    - index.qmd
+    - 00-prefacio.qmd
+    - 01-introduccion.qmd
+    - 02-teoria-inla.qmd
+    - 03-regresion-lineal.qmd
+    - 04-modelos-lineales-generalizados.qmd
+    - 05-modelos-mixtos.qmd
+    - 06-supervivencia.qmd
+    - 07-caminatas-aleatorias-suavizado.qmd
+    - 08-procesos-gaussianos.qmd
+    - 09-modelos-aditivos.qmd
+    - 10-error-variables.qmd
+    - 11-temas-diversos.qmd
+  page-navigation: true
+  search: true
+
+bibliography: referencias.bib
+
+execute:
+  enabled: false
+  echo: true
+  warning: false
+  message: false
+
+format:
+  html:
+    theme: cosmo
+    css: estilos.css
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    number-sections: true
+  pdf:
+    documentclass: scrbook
+    papersize: letter
+    fontsize: 11pt
+    toc: true
+    number-sections: true
+    colorlinks: true
+    geometry:
+      - margin=1in
+    include-in-header: preambulo.tex

@@ -1,0 +1,459 @@
+# Modelos lineales generalizados
+
+Los modelos lineales generalizados (GLM) proporcionan una familia unificadora de modelos lineales ampliamente utilizada en regresión práctica. Generalizan la regresión ordinaria al relacionar la respuesta con el predictor mediante una función de enlace y permitir que la varianza de cada medición dependa de su valor esperado. Así pueden describir respuestas con distribuciones distintas de la normal y evitan buscar transformaciones que intenten satisfacer simultáneamente normalidad, linealidad y homogeneidad de varianza. Entre los GLM más comunes están la regresión logística para datos binarios y las regresiones Poisson y binomial negativa para conteos.
+
+## GLM
+
+Una variable aleatoria $Y$ pertenece a una familia exponencial si su densidad o función de masa puede escribirse como
+
+$$
+f(y\mid\theta,\phi)=
+\exp\left\{\frac{y\theta-b(\theta)}{a(\phi)}+c(y,\phi)\right\}. \qquad\text{(4.1)}
+$$
+
+El parámetro canónico $\theta=g(\mu)$ es función de $\mu=E(Y)$; $g$ es el enlace canónico y no depende de $\phi$. El parámetro de dispersión $\phi>0$ representa la escala. Las funciones $a$, $b$ y $c$ son conocidas y cambian con la distribución.
+
+La familia exponencial incluye, entre otras, las distribuciones normal, gaussiana inversa, exponencial, gamma, Bernoulli, binomial, multinomial, Poisson, ji-cuadrada, Wishart y Wishart inversa. Por ejemplo, una normal de media $\mu$ y varianza $\sigma^2$ tiene $\theta=\mu$, $\phi=\sigma^2$, $a(\phi)=\phi$ y $b(\theta)=\theta^2/2$.
+
+Si $Y$ cuenta éxitos en $n$ ensayos binarios independientes con probabilidad $\mu$,
+
+$$
+f(y\mid\mu)={n\choose y}\mu^y(1-\mu)^{n-y},
+$$
+
+entonces $\theta=\log\{\mu/(1-\mu)\}$, $\phi=1$ y $b(\theta)=n\log(1+e^\theta)$. Para una Poisson,
+
+$$
+f(y\mid\mu)=e^{-\mu}\frac{\mu^y}{y!}
+=\exp\{y\theta-e^\theta-\log(y!)\},
+$$
+
+con $\theta=\log\mu$ y $\phi=1$.
+
+Una propiedad fundamental es
+
+$$
+E(Y)=b'(\theta),\qquad
+\operatorname{Var}(Y)=a(\phi)b''(\theta).
+$$
+
+$b''(\theta)$ describe la relación entre media y varianza. Para la normal el enlace canónico es identidad y la función de varianza es constante; para Poisson, enlace logarítmico y varianza $\mu$; para binomial, enlace logit y varianza $\mu(1-\mu)$; para gamma, enlace inverso y varianza proporcional a $\mu^2$.
+
+Un GLM contiene tres componentes:
+
+1. **Componente aleatorio:** $Y_i$ sigue una distribución particular de la familia exponencial.
+2. **Predictor lineal:**
+   $$
+   \eta_i=\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip}
+   =\mathbf x_i^T\boldsymbol\beta.
+   $$
+3. **Función de enlace:** $g(\mu_i)=\eta_i$, donde $\mu_i=E(Y_i)$.
+
+Normalmente se utiliza el enlace canónico. El marco contiene regresión normal, logística, probit, Poisson, binomial negativa y gamma. La estimación clásica se basa en máxima verosimilitud. MCMC es una opción bayesiana común, pero INLA trata una amplia variedad de GLM de forma unificada y permite automatizar considerablemente la inferencia.
+
+## Respuestas binarias
+
+Muchas respuestas solo admiten dos valores: éxito o fracaso, presencia o ausencia. La regresión logística estima la probabilidad de una respuesta binaria en función de uno o más predictores. Si $Y\sim\operatorname{Bernoulli}(\pi)$,
+
+$$
+f(y)=\exp\left\{y\log\frac{\pi}{1-\pi}+\log(1-\pi)\right\}.
+$$
+
+El parámetro canónico es el logit y la regresión es
+
+$$
+Y_i\sim\operatorname{Bernoulli}(\pi_i),\qquad
+\operatorname{logit}(\pi_i)=\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip}.
+$$
+
+Puede sustituirse el logit por el enlace probit $\Phi^{-1}(\pi)$. Ambos se comportan de modo semejante salvo en probabilidades extremas.
+
+### Ejemplo: bajo peso al nacer
+
+Los datos `lowbwt` contienen 189 nacimientos registrados en una clínica obstétrica de Massachusetts; 59 bebés pesaron menos de 2500 gramos. La respuesta `LOW` indica bajo peso. Los predictores son edad materna (`AGE`), peso en la última menstruación (`LWT`), raza (`RACE`), tabaquismo durante el embarazo (`SMOKE`), hipertensión (`HT`), irritabilidad uterina (`UI`) y visitas médicas durante el primer trimestre (`FTV`). El objetivo es determinar cuáles constituyen factores de riesgo.
+
+Como referencia de máxima verosimilitud:
+
+```{r}
+data(lowbwt, package = "brinla")
+lowbwt.glm1 <- glm(
+  LOW ~ AGE + LWT + RACE + SMOKE + HT + UI + FTV,
+  data = lowbwt, family = binomial()
+)
+round(coef(summary(lowbwt.glm1)), 4)
+```
+
+Las variables categóricas se representan mediante indicadores, tomando la primera categoría como referencia. Por ejemplo, `RACE2` compara madres negras con blancas y `RACE3`, otras razas con blancas.
+
+El ajuste con INLA es:
+
+```{r}
+lowbwt.inla1 <- inla(
+  LOW ~ AGE + LWT + RACE + SMOKE + HT + UI + FTV,
+  data = lowbwt, family = "binomial", Ntrials = 1,
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(lowbwt.inla1$summary.fixed, 4)
+```
+
+Las estimaciones son muy semejantes a las MLE. La media posterior de `LWT` es -0.0176, con desviación 0.0069 e intervalo de credibilidad $(-0.0317,-0.0047)$; por tanto, su efecto es negativo con probabilidad superior al 95 %. Los intervalos de `AGE` y `FTV` contienen cero. `RACE2`, `RACE3`, `SMOKE1`, `HT1` y `UI1` se asocian positivamente con bajo peso.
+
+Los cocientes de momios se obtienen exponenciando coeficientes. Para `LWT`, $e^{-0.0176}=0.9826$: una libra adicional de peso materno reduce en aproximadamente 1.74 % los *odds* de bajo peso, manteniendo los demás predictores.
+
+Una eliminación hacia atrás basada en DIC conduce al modelo reducido:
+
+```{r}
+lowbwt.inla2 <- inla(
+  LOW ~ LWT + RACE + SMOKE + HT + UI,
+  data = lowbwt, family = "binomial", Ntrials = 1,
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+c(lowbwt.inla1$dic$dic, lowbwt.inla2$dic$dic)
+```
+
+Los DIC son 221.2093 y 217.7459, por lo que se prefiere el reducido. Su predictor estimado es
+
+$$
+\begin{aligned}
+\operatorname{logit}(\widehat\pi)=&\ 0.109-0.018\,\text{LWT}
++1.362\,\text{RACE}_2+0.949\,\text{RACE}_3\\
+&+1.062\,\text{SMOKE}+1.934\,\text{HT}+0.925\,\text{UI}.
+\end{aligned}
+$$
+
+Puede emplearse para valores ajustados y nuevas predicciones.
+
+## Respuestas de conteo
+
+Un conteo toma valores $0,1,2,\ldots$ y suele ser discreto y asimétrico. Una regresión lineal puede generar predicciones negativas imposibles y la abundancia de ceros dificulta normalizar mediante transformaciones como $\log(y+c)$.
+
+### Regresión Poisson
+
+El GLM básico para conteos es
+
+$$
+Y_i\sim\operatorname{Poisson}(\mu_i),\qquad
+\log\mu_i=\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip}.
+$$
+
+La media y varianza condicionales son ambas $\mu_i$.
+
+Los datos `AIDS` registran muertes por sida en Australia por trimestre entre enero de 1983 y junio de 1986, con 14 observaciones. `TIME` mide trimestres desde enero de 1983 y `DEATHS` el conteo. La respuesta es asimétrica y crece de forma no lineal.
+
+```{r}
+data(AIDS, package = "brinla")
+AIDS.inla1 <- inla(
+  DEATHS ~ TIME, data = AIDS, family = "poisson",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(AIDS.inla1$summary.fixed, 4)
+```
+
+Las medias posteriores son 0.3408 y 0.2565:
+
+$$
+\widehat\mu=\exp(0.3408+0.2565\,\text{TIME}).
+$$
+
+Cuatro trimestres adicionales multiplican el conteo esperado por $e^{4(0.2565)}=2.7899$. Sin embargo, el ajuste sobreestima al principio y al final y subestima en el centro. Usar $\log(\text{TIME})$ mejora la curvatura:
+
+```{r}
+AIDS.inla2 <- inla(
+  DEATHS ~ log(TIME), data = AIDS, family = "poisson",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+c(AIDS.inla1$dic$dic, AIDS.inla2$dic$dic)
+```
+
+El segundo predictor produce
+
+$$
+\widehat\mu=\exp\{-1.9424+2.1747\log(\text{TIME})\}
+$$
+
+y reduce DIC de 86.7031 a 74.1076. La MLE mediante `glm(DEATHS ~ log(TIME), family=poisson())` da -1.9442 y 2.1748, prácticamente idénticos.
+
+### Regresión binomial negativa
+
+La igualdad Poisson entre media y varianza suele ser demasiado restrictiva. Cuando la varianza supera la nominal hay sobredispersión, y el modelo Poisson subestima los errores estándar. La binomial negativa relaja la restricción.
+
+Supongamos $v_i\sim\operatorname{Gamma}(\alpha,\alpha)$ y, condicionado a $v_i$,
+
+$$
+Y_i\mid v_i\sim\operatorname{Poisson}(v_i\mu_i).
+$$
+
+Marginalmente,
+
+$$
+P(Y_i=y)=\frac{\Gamma(y+\alpha)}{\Gamma(y+1)\Gamma(\alpha)}
+\left(\frac{\alpha}{\alpha+\mu_i}\right)^\alpha
+\left(\frac{\mu_i}{\alpha+\mu_i}\right)^y. \qquad\text{(4.2)}
+$$
+
+Entonces $E(Y_i)=\mu_i$ y $\operatorname{Var}(Y_i)=\mu_i+\mu_i^2/\alpha$. Definimos dispersión $\phi=1/\alpha$; $\phi=0$ recupera Poisson. Se usa enlace logarítmico.
+
+#### Ejemplo: cangrejos herradura
+
+En 173 hembras de cangrejo herradura se registró el número de machos satélite (`SATELLITES`), color (`COLOR`), estado de espinas (`SPINE`), peso (`WEIGHT`) y anchura del caparazón (`WIDTH`). La media de satélites es 2.9191 y la varianza 9.9120. Dentro de cada color, las varianzas también superan ampliamente las medias: hay sobredispersión. `WEIGHT` y `WIDTH` correlacionan 0.8869, por lo que conservamos solo `WIDTH`.
+
+```{r}
+data(crab, package = "brinla")
+crab.inla1 <- inla(
+  SATELLITES ~ COLOR + SPINE + WIDTH,
+  data = crab, family = "nbinomial",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(crab.inla1$summary.fixed, 4)
+```
+
+La media posterior de `WIDTH` es 0.7001, con intervalo $(0.3457,1.0691)$; las restantes covariables tienen intervalos que incluyen cero. Las estimaciones coinciden estrechamente con `glm.nb()`.
+
+INLA informa el parámetro de tamaño $\alpha=1/\phi$. Para obtener dispersión:
+
+```{r}
+overdisp.post <- inla.tmarginal(
+  fun = function(x) 1/x,
+  marg = crab.inla1$marginals.hyperpar[[1]]
+)
+inla.emarginal(function(x) x, overdisp.post)
+inla.qmarginal(c(.025, .975), overdisp.post)
+```
+
+La media de $\phi$ es 1.108 y su intervalo $(0.7610,1.5468)$, sobredispersión moderada. Al ajustar Poisson, las medias cambian relativamente poco pero las desviaciones posteriores se reducen mucho. Los DIC son 761.2103 para binomial negativa y 918.9907 para Poisson, favoreciendo claramente la primera.
+
+## Modelado de tasas
+
+Con frecuencia se observa un conteo durante cierto tiempo o exposición: accidentes por año, muertes por grupo etario, etc. Una tasa divide el conteo entre la exposición y, a diferencia de una proporción, puede tomar cualquier valor no negativo. Poisson y binomial negativa las representan mediante un *offset*. Si $e_i$ es la exposición,
+
+$$
+\log(\mu_i/e_i)=\beta_0+\sum_j\beta_jx_{ij},
+$$
+
+equivalentemente,
+
+$$
+\log\mu_i=\log e_i+\beta_0+\sum_j\beta_jx_{ij},
+$$
+
+donde el coeficiente de $\log e_i$ queda fijado en uno.
+
+### Ejemplo: reclamaciones de seguros
+
+Los datos `Insurance` registran titulares expuestos a riesgo y reclamaciones de automóvil durante el tercer trimestre de 1973. Los predictores categóricos son distrito de residencia (`District`), cilindrada del automóvil (`Group`) y edad (`Age`). En `glm()` el *offset* aparece explícitamente:
+
+```{r}
+library(MASS)
+data(Insurance, package = "MASS")
+insur.glm <- glm(
+  Claims ~ District + Group + Age + offset(log(Holders)),
+  data = Insurance, family = poisson
+)
+```
+
+En INLA la exposición se pasa con `E`:
+
+```{r}
+insur.inla1 <- inla(
+  Claims ~ District + Group + Age,
+  data = Insurance, family = "poisson", E = Holders
+)
+round(insur.inla1$summary.fixed, 4)
+```
+
+Para ciudades grandes (`District4`) la media es 0.2342 e intervalo $(0.1118,0.3541)$. La tasa estimada supera la rural en $e^{0.2342}-1=26.36\%$, con intervalo aproximado 11.83--42.49 %, manteniendo grupo y edad. También son importantes los contrastes lineales de `Group` y `Age`.
+
+Los residuos de Pearson clásicos son $(y_i-\widehat\mu_i)/\sqrt{\widehat\mu_i}$. Su versión bayesiana sustituye $\widehat\mu_i$ por $g^{-1}(\mathbf x_i^T\boldsymbol\beta)$ y posee una posterior. `brinla` calcula sus medias:
+
+```{r}
+insur.bresid <- bri.Pois.resid(insur.inla1, plot = TRUE)
+abline(h = c(-1.96, 1.96), lty = 2)
+qqnorm(insur.bresid$resid)
+qqline(insur.bresid$resid)
+```
+
+Los residuos forman una banda horizontal aleatoria y siguen bien una normal estándar, respaldando el modelo Poisson.
+
+## Regresión gamma para datos sesgados
+
+El GLM gamma resulta útil para respuestas continuas positivas y sesgadas. Transformar con logaritmos es habitual, pero una gamma permite interpretar parámetros directamente en términos de la media original.
+
+Si una gamma tiene forma $a$ y tasa $b$, $E(Y)=a/b$ y $\operatorname{Var}(Y)=a/b^2$. INLA reparametriza con media $\mu=a/b$ y precisión $\phi=\mu/b$, de modo que la dispersión es $1/\phi$. El enlace predeterminado es $\mu=e^\eta$ y la hiperprevia se define sobre la precisión transformada.
+
+### Ejemplo: resistividad de obleas
+
+Los datos `wafer` proceden de un factorial completo con cuatro factores binarios que pueden influir en la resistividad de una oblea semiconductora. `resist` presenta sesgo claro.
+
+```{r}
+library(faraway)
+data(wafer)
+formula <- resist ~ x1 + x2 + x3 + x4
+wafer.inla1 <- inla(formula, family = "gamma", data = wafer)
+round(wafer.inla1$summary.fixed, 4)
+round(wafer.inla1$summary.hyperpar, 4)
+```
+
+Las medias posteriores son 5.4465, 0.1212, -0.3005, 0.1798 y -0.0576. Los resultados son casi idénticos a `glm(..., family=Gamma(link="log"))`. La media posterior de dispersión es 0.0129 y el intervalo $(0.0058,0.0275)$:
+
+```{r}
+disp.post <- inla.tmarginal(
+  function(x) 1/x, wafer.inla1$marginals.hyperpar[[1]]
+)
+inla.emarginal(function(x) x, disp.post)
+inla.qmarginal(c(.025, .975), disp.post)
+```
+
+Una regresión normal de `log(resist)` produce coeficientes casi iguales, pero la interpretación difiere. En ella,
+
+$$
+E[\log Y]=\mathbf x^T\boldsymbol\beta;
+$$
+
+en la gamma,
+
+$$
+\log E[Y]=\mathbf x^T\boldsymbol\beta.
+$$
+
+Por ejemplo, $e^{0.1212}=1.1289$: el nivel positivo de `x1` multiplica por 1.1289 la media de resistividad en la escala original, manteniendo los otros factores.
+
+## Respuestas proporcionales
+
+Las proporciones continuas en $(0,1)$ suelen ser heterocedásticas: presentan mayor variación cerca del centro y menor en los extremos. Transformar mediante logit y aplicar regresión normal puede generar inferencia inexacta en muestras pequeñas y parámetros referidos a la media transformada, no a la original.
+
+La regresión beta modela naturalmente estas respuestas, admite asimetrías y es heterocedástica. Con $p,q>0$, reparametrizamos una beta mediante
+
+$$
+\mu=\frac{p}{p+q},\qquad \tau=p+q.
+$$
+
+Entonces
+
+$$
+Y\sim\operatorname{Beta}(\mu,\tau),\qquad
+E(Y)=\mu,\qquad
+\operatorname{Var}(Y)=\frac{\mu(1-\mu)}{1+\tau}.
+$$
+
+Una $\tau$ pequeña implica mayor dispersión. La familia beta abarca densidades simétricas, sesgadas, en U y en J. INLA utiliza el enlace logit:
+
+$$
+\operatorname{logit}(\mu_i)=\beta_0+\sum_j\beta_jx_{ij}.
+$$
+
+### Ejemplo: rendimiento de gasolina
+
+Los datos `GasolineYield` registran la proporción de petróleo crudo convertida en gasolina (`yield`) y como predictores gravedad del crudo (`gravity`), presión de vapor (`pressure`), temperatura al vaporizarse 10 % (`temp10`) y temperatura al vaporizarse toda la gasolina (`temp`). La respuesta está sesgada a la derecha y llega aproximadamente a 0.5.
+
+```{r}
+library(betareg)
+data(GasolineYield)
+gas.inla1 <- inla(
+  yield ~ gravity + pressure + temp10 + temp,
+  data = GasolineYield, family = "beta",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(gas.inla1$summary.fixed, 4)
+round(gas.inla1$summary.hyperpar, 4)
+```
+
+Las medias son -2.6607, 0.0045, 0.0297, -0.0109 y 0.0104, prácticamente iguales a máxima verosimilitud. La precisión media de INLA, 88.9334, es bastante menor que la MLE 248.2419; el original deja la explicación de esta diferencia como problema abierto.
+
+Los residuos beta estandarizados bayesianos son
+
+$$
+r_i=\frac{y_i-g^{-1}(\mathbf x_i^T\boldsymbol\beta)}
+{\sqrt{g^{-1}(\mathbf x_i^T\boldsymbol\beta)
+[1-g^{-1}(\mathbf x_i^T\boldsymbol\beta)]/(1+\tau)}}.
+$$
+
+Se obtienen sustituyendo muestras posteriores de $\boldsymbol\beta$ y $\tau$:
+
+```{r}
+gas.inla1.resid <- bri.beta.resid(
+  gas.inla1, plot = TRUE, ylim = c(-2, 2)
+)
+abline(h = c(-1.96, 1.96), lty = 2)
+```
+
+Solo un caso sale de la banda y no se observa patrón sistemático. Como únicamente `temp10` y `temp` tienen intervalos que excluyen cero, ajustamos:
+
+```{r}
+gas.inla2 <- inla(
+  yield ~ temp10 + temp,
+  data = GasolineYield, family = "beta",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+c(gas.inla1$dic$dic, gas.inla2$dic$dic)
+```
+
+Los DIC son -126.8995 y -131.2635, por lo que se prefiere el modelo reducido. `temp10` se relaciona negativamente con el rendimiento y `temp`, positivamente. Todos sus residuos quedan en la banda y conservan un patrón aleatorio.
+
+## Modelado de datos inflados en cero
+
+Una regresión inflada en cero modela datos con exceso de ceros. Es común en conteos; por ejemplo, reclamaciones de seguro incluyen personas que no contrataron cobertura y no pueden reclamar. INLA ofrece versiones infladas en cero para Poisson, binomial, binomial negativa y beta-binomial.
+
+Son modelos de mezcla. Para la observación $i$, un proceso genera siempre cero con probabilidad $\omega$ y otro genera desde una distribución $g$ con probabilidad $1-\omega$:
+
+$$
+Y_i=\begin{cases}
+0,&\text{con probabilidad }\omega,\\
+g(Y_i\mid\mathbf x_i),&\text{con probabilidad }1-\omega.
+\end{cases} \qquad\text{(4.4)}
+$$
+
+En el modelo de tipo 1,
+
+$$
+P(Y_i=y_i\mid\mathbf x_i)
+=\omega I(y_i=0)+(1-\omega)g(y_i\mid\mathbf x_i).
+$$
+
+INLA también ofrece tipo 0, cuya segunda parte se condiciona a valores positivos. Aquí usamos tipo 1.
+
+### Ejemplo: publicaciones científicas
+
+Los datos `articles` estudian cómo sexo (`fem`), estado civil (`mar`), hijos pequeños (`kid5`), prestigio del posgrado (`phd`) y publicaciones del mentor (`ment`) afectan el número de artículos (`art`). De 915 científicos, 275 —30.1 %— no publicaron ninguno.
+
+El Poisson inflado en cero es:
+
+```{r}
+data(articles, package = "brinla")
+articles.inla1 <- inla(
+  art ~ fem + mar + kid5 + phd + ment,
+  data = articles, family = "zeroinflatedpoisson1",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(articles.inla1$summary.fixed, 4)
+round(articles.inla1$summary.hyperpar, 4)
+```
+
+Solo `phd` incluye cero en su intervalo. La probabilidad estructural de cero tiene media 0.1556 e intervalo $(0.1156,0.1960)$.
+
+La binomial negativa inflada en cero se ajusta con:
+
+```{r}
+articles.inla2 <- inla(
+  art ~ fem + mar + kid5 + phd + ment,
+  data = articles, family = "zeroinflatednbinomial1",
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(articles.inla2$summary.fixed, 4)
+round(articles.inla2$summary.hyperpar, 4)
+```
+
+Las medias de los predictores son parecidas, pero sus desviaciones son mayores. En particular, `mar` pasa de un intervalo apenas positivo bajo Poisson a uno que contiene cero. La probabilidad estructural de cero baja a 0.0110 porque la binomial negativa absorbe parte de la variabilidad. Los DIC son 3255.584 y 3137.209, favoreciendo la binomial negativa.
+
+La dispersión se transforma como antes:
+
+```{r}
+overdisp.post <- inla.tmarginal(
+  function(x) 1/x,
+  articles.inla2$marginals.hyperpar[[1]]
+)
+inla.emarginal(function(x) x, overdisp.post)
+inla.qmarginal(c(.025, .975), overdisp.post)
+```
+
+Su media es 0.4457 e intervalo $(0.3507,0.5590)$, sobredispersión leve a moderada. El modelo concluye que las científicas publican menos artículos que los científicos, el número de hijos pequeños se asocia negativamente y las publicaciones del mentor positivamente. Estado civil y prestigio del posgrado no presentan asociación al nivel de credibilidad del 95 %.
+

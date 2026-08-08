@@ -1,0 +1,607 @@
+# Regresión lineal bayesiana
+
+La regresión lineal es uno de los métodos estadísticos más habituales para modelar la relación entre una variable dependiente escalar —o respuesta— y una o más variables explicativas. Estudia relaciones lineales y aditivas entre variables. Fue el primer tipo de regresión investigado rigurosamente y ha sido objeto de innumerables libros [@chatterjee2015]. Aunque pueda parecer demasiado sencilla frente a técnicas más modernas que aparecerán después, sigue siendo una de las herramientas más útiles y potentes en aplicaciones prácticas. Este capítulo sirve como punto de partida para modelos más complejos. Comprender profundamente la regresión lineal estándar es importante, pues muchas técnicas sofisticadas son generalizaciones o extensiones suyas.
+
+## Introducción
+
+Sean
+
+$$
+\{x_{i1},\ldots,x_{ip},y_i\},\qquad i=1,\ldots,n,
+$$
+
+$n$ unidades observadas, cada una con un vector de $p$ predictores y una respuesta. El modelo lineal múltiple es
+
+$$
+y_i=\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip}+\varepsilon_i. \qquad\text{(3.1)}
+$$
+
+La relación se representa mediante el predictor $\mu=\beta_0+\beta_1x_1+\cdots+\beta_px_p$ y un término de perturbación o error $\varepsilon$. Los parámetros desconocidos se estiman con los datos. Cuando $p=1$ obtenemos regresión lineal simple. La linealidad se refiere a los parámetros, no necesariamente a los predictores: $y_i=\beta_0+\beta_1x_i+\beta_2x_i^2+\beta_3x_i^3+\varepsilon_i$ sigue siendo un modelo lineal.
+
+En forma matricial,
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon, \qquad\text{(3.2)}
+$$
+
+donde $\mathbf y$ es de $n\times1$, $\mathbf X$ contiene una columna de unos y los $p$ predictores, y $\boldsymbol\beta=(\beta_0,\ldots,\beta_p)^T$. Comenzamos suponiendo errores independientes normales de media cero y varianza constante:
+
+$$
+\boldsymbol\varepsilon\sim N(\mathbf0,\sigma^2\mathbf I_n).
+$$
+
+En estadística frecuentista se estiman los parámetros por máxima verosimilitud o mínimos cuadrados. La verosimilitud es
+
+$$
+L(\boldsymbol\beta,\sigma^2\mid\mathbf X,\mathbf y)
+=(2\pi\sigma^2)^{-n/2}
+\exp\left[-\frac{1}{2\sigma^2}
+(\mathbf y-\mathbf X\boldsymbol\beta)^T
+(\mathbf y-\mathbf X\boldsymbol\beta)\right].
+$$
+
+Si $\mathbf X^T\mathbf X$ tiene rango completo, las ecuaciones de puntuación producen
+
+$$
+\widehat{\boldsymbol\beta}=(\mathbf X^T\mathbf X)^{-1}\mathbf X^T\mathbf y,
+$$
+
+$$
+\widehat\sigma^2_{\mathrm{MLE}}
+=\frac1n(\mathbf y-\mathbf X\widehat{\boldsymbol\beta})^T
+(\mathbf y-\mathbf X\widehat{\boldsymbol\beta}).
+$$
+
+$\widehat{\boldsymbol\beta}$ es insesgado y coincide con mínimos cuadrados, pero $\widehat\sigma^2_{\mathrm{MLE}}$ no lo es. El estimador insesgado habitual sustituye $n$ por $n-p-1$.
+
+## Inferencia bayesiana para la regresión lineal
+
+En análisis bayesiano la inversa de la varianza, $\tau=\sigma^{-2}$, desempeña un papel importante y se denomina precisión. El modelo implica
+
+$$
+\mathbf y\mid\boldsymbol\beta,\tau
+\sim N(\mathbf X\boldsymbol\beta,\tau^{-1}\mathbf I).
+$$
+
+Suponiendo independencia previa entre $\boldsymbol\beta$ y $\tau$,
+
+$$
+\pi(\boldsymbol\beta,\tau\mid\mathbf X,\mathbf y)
+\propto L(\boldsymbol\beta,\tau\mid\mathbf X,\mathbf y)
+\pi(\boldsymbol\beta)\pi(\tau).
+$$
+
+Solo ciertas previas restringidas producen posteriores cerradas. Si existe información previa debe incorporarse; si no existe, querríamos minimizar su influencia. Una previa no informativa como $\pi(\boldsymbol\beta)\propto1$ resulta atractiva, pero no es invariante ante transformaciones. El apéndice B de la obra original desarrolla esta cuestión; véase también @gelman2014.
+
+INLA exige un modelo gaussiano latente y, por tanto, una previa gaussiana para $\boldsymbol\beta$. Para $\tau$ suele elegirse una distribución difusa:
+
+$$
+\boldsymbol\beta\sim N_{p+1}(\mathbf c_0,\mathbf V_0),
+\qquad \tau\sim\operatorname{Gamma}(a_0,b_0).
+$$
+
+Frecuentemente $\mathbf V_0$ es diagonal, equivalente a previas normales independientes para los coeficientes. Usamos la parametrización gamma con media $a_0/b_0$ y varianza $a_0/b_0^2$. Esta previa es condicionalmente conjugada para la precisión.
+
+Aunque la posterior conjunta no resulte manejable, un Gibbs por bloques alternaría entre
+
+$$
+\pi(\boldsymbol\beta\mid\mathbf X,\mathbf y,\tau)
+\quad\text{y}\quad
+\pi(\tau\mid\mathbf X,\mathbf y,\boldsymbol\beta).
+$$
+
+INLA evita la simulación y aproxima las marginales con gran precisión y rapidez. La marginal de $\tau$ se obtiene mediante
+
+$$
+\widetilde\pi(\tau\mid\mathbf X,\mathbf y)
+=\left.
+\frac{\pi(\boldsymbol\beta,\tau,\mathbf X,\mathbf y)}
+{\widetilde\pi_G(\boldsymbol\beta\mid\tau,\mathbf X,\mathbf y)}
+\right|_{\boldsymbol\beta=\boldsymbol\beta^*(\tau)},
+$$
+
+exacta cuando la condicional de $\boldsymbol\beta$ es gaussiana. Después,
+
+$$
+\widetilde\pi(\beta_j\mid\mathbf X,\mathbf y)
+\approx\sum_k
+\widetilde\pi(\beta_j\mid\tau_k,\mathbf X,\mathbf y)
+\widetilde\pi(\tau_k\mid\mathbf X,\mathbf y)\Delta_k.
+$$
+
+Estas marginales permiten calcular medias, varianzas y cuantiles. Como subproductos, INLA obtiene DIC, verosimilitudes marginales y otras cantidades para comparar y validar modelos.
+
+### Ejemplo: contaminación atmosférica
+
+Los datos `usair`, analizados por @everitt2006, investigan determinantes de la contaminación en 41 ciudades estadounidenses. `SO2` es el contenido de dióxido de azufre en microgramos por metro cúbico. Los posibles predictores son: temperatura anual negativa (`negtemp`), número de empresas manufactureras con al menos 20 trabajadores (`manuf`), población en miles (`pop`), velocidad anual del viento (`wind`), precipitación anual (`precip`) y días con precipitación (`days`). Los dos primeros predictores sustantivos se relacionan con la ecología humana y los cuatro restantes con el clima. `negtemp` usa el signo negativo para que valores altos de todas las variables representen un ambiente menos atractivo.
+
+Antes de ajustar conviene explorar los datos. El siguiente código produce diagramas de dispersión, correlaciones y densidades marginales:
+
+```{r}
+library(ggplot2)
+library(GGally)
+data(usair, package = "brinla")
+ggpairs(
+  usair[, -1],
+  lower = list(continuous = "cor"),
+  upper = list(continuous = "points", combo = "dot")
+) + theme(axis.text = element_text(size = 6))
+```
+
+`manuf` y `pop` tienen correlación 0.955. Esta multicolinealidad vuelve los coeficientes muy sensibles a pequeñas modificaciones de datos o variables y genera grandes errores de muestreo. Por ahora conservaremos solo `manuf`; en una sección posterior utilizaremos regresión ridge.
+
+Como referencia frecuentista ajustamos:
+
+```{r}
+usair.formula1 <- SO2 ~ negtemp + manuf + wind + precip + days
+usair.lm1 <- lm(usair.formula1, data = usair)
+round(coef(summary(usair.lm1)), 4)
+round(summary(usair.lm1)$sigma, 4)
+```
+
+Las estimaciones del original son 135.7714 para el intercepto, 1.7714 para `negtemp`, 0.0256 para `manuf`, -3.7379 para `wind`, 0.6259 para `precip` y -0.0571 para `days`; el error estándar residual es 15.79. `negtemp` y `manuf` son significativos, los otros tres no.
+
+Las previas predeterminadas de INLA son normales muy difusas para los coeficientes y log-gamma para la precisión:
+
+$$
+\beta_j\sim N(0,10^6),\qquad
+\log\tau\sim\operatorname{logGamma}(1,10^{-5}).
+$$
+
+```{r}
+library(INLA)
+usair.inla1 <- inla(
+  usair.formula1, data = usair,
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(usair.inla1$summary.fixed, 4)
+round(usair.inla1$summary.hyperpar, 4)
+```
+
+Las medias posteriores prácticamente reproducen las MLE: 135.4892, 1.7690, 0.0256, -3.7229, 0.6249 y -0.0567. El intervalo de credibilidad del 95 % de `negtemp` es $(0.5111,3.0247)$, por lo que con probabilidad muy alta se asocia positivamente con `SO2`. A diferencia de aproximaciones frecuentistas asintóticas, las estimaciones bayesianas por intervalo suelen ser apropiadas en muestras pequeñas y se interpretan directamente como intervalos que contienen el parámetro con probabilidad 0.95.
+
+`summary(usair.inla1)` presenta efectos fijos, hiperparámetros, log-verosimilitud marginal y DIC. Las marginales completas están en `marginals.fixed` y `marginals.hyperpar`. INLA incluye funciones para densidad, distribución, cuantiles, moda y esperanza: `inla.dmarginal()`, `inla.pmarginal()`, `inla.qmarginal()`, `inla.mmarginal()` e `inla.emarginal()`. `inla.rmarginal()` genera valores aleatorios y `inla.tmarginal()` transforma una marginal.
+
+Por ejemplo, la esperanza posterior de $\sigma$ es:
+
+```{r}
+inla.emarginal(
+  fun = function(x) 1/sqrt(x),
+  marg = usair.inla1$marginals.hyperpar[[1]]
+)
+```
+
+El resultado, 15.66331, es muy cercano a 15.79. El paquete `brinla` ofrece resúmenes directamente en la escala de desviación estándar:
+
+```{r}
+library(brinla)
+round(bri.hyperpar.summary(usair.inla1), 4)
+bri.hyperpar.plot(usair.inla1)
+```
+
+La posterior de $\sigma$ tiene media 15.6617, intervalo $(12.5321,19.7590)$ y ligera asimetría positiva.
+
+Las previas pueden modificarse. Supongamos $\beta_0\sim N(100,100)$, $\beta_{\text{negtemp}}\sim N(2,1)$ y $\beta_{\text{wind}}\sim N(-3,1)$, y una previa normal para $\log\tau$:
+
+```{r}
+usair.inla2 <- inla(
+  usair.formula1, data = usair,
+  control.compute = list(dic = TRUE, cpo = TRUE),
+  control.fixed = list(
+    mean.intercept = 100, prec.intercept = 1e-2,
+    mean = list(negtemp = 2, wind = -3, default = 0),
+    prec = 1
+  ),
+  control.family = list(
+    hyper = list(prec = list(prior = "gaussian", param = c(0, 1)))
+  )
+)
+```
+
+Si cada coeficiente requiere distinta precisión, `prec` también debe ser una lista. Debe actuarse con cuidado y comparar las elecciones mediante los métodos de selección y comprobación siguientes.
+
+## Predicción
+
+Para un nuevo vector $\widetilde{\mathbf x}$ queremos predecir $\widetilde y$. Sea $\boldsymbol\theta=(\boldsymbol\beta,\tau)$. La predictiva posterior es
+
+$$
+p(\widetilde y\mid\mathbf y)
+=\int p(\widetilde y\mid\boldsymbol\theta)
+p(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta.
+$$
+
+En la mayoría de los modelos no tiene forma analítica y un análisis MCMC usa simulación predictiva. Consideremos tres nuevos casos:
+
+```{r}
+new.data <- data.frame(
+  negtemp = c(-50, -60, -40),
+  manuf = c(150, 100, 400),
+  pop = c(200, 100, 300),
+  wind = c(6, 7, 8),
+  precip = c(10, 30, 20),
+  days = c(20, 100, 40)
+)
+predict(usair.lm1, new.data, se.fit = TRUE)
+```
+
+Las predicciones frecuentistas son 33.727, 18.950 y 55.477, con errores estándar 14.937, 5.329 y 17.639.
+
+INLA no necesita una función `predict`: predecir equivale a ajustar el modelo con respuestas faltantes. Se añaden filas con `SO2 = NA` y se indica el enlace para ellas:
+
+```{r}
+usair.combined <- rbind(
+  usair,
+  data.frame(SO2 = c(NA, NA, NA), new.data)
+)
+usair.link <- c(rep(NA, nrow(usair)), rep(1, nrow(new.data)))
+usair.inla1.pred <- inla(
+  usair.formula1, data = usair.combined,
+  control.predictor = list(link = usair.link)
+)
+usair.inla1.pred$summary.fitted.values[
+  (nrow(usair) + 1):nrow(usair.combined),
+]
+```
+
+Las medias posteriores son 33.653, 18.927 y 55.404, con desviaciones 14.938, 5.330 y 17.644, en estrecha concordancia con mínimos cuadrados.
+
+## Selección y comprobación del modelo
+
+### Selección mediante DIC
+
+A menudo buscamos un modelo reducido con el mejor subconjunto de variables. El enfoque frecuentista suele usar AIC. En el ejemplo:
+
+```{r}
+library(MASS)
+usair.step <- stepAIC(usair.lm1, trace = FALSE)
+usair.step$anova
+```
+
+El procedimiento elimina `days`, dejando `negtemp`, `manuf`, `wind` y `precip`:
+
+```{r}
+usair.formula2 <- SO2 ~ negtemp + manuf + wind + precip
+usair.lm2 <- lm(usair.formula2, data = usair)
+```
+
+DIC generaliza AIC al contexto bayesiano sumando una medida de bondad de ajuste y otra de complejidad. Menor DIC indica mejor compromiso. INLA no ofrece selección escalonada automática por DIC, pero con cinco predictores puede realizarse eliminación manual:
+
+```{r}
+usair.inla3 <- inla(
+  usair.formula2, data = usair,
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+c(usair.inla1$dic$dic, usair.inla3$dic$dic)
+```
+
+Los DIC son 350.6494 y 348.5703, por lo que se prefiere el modelo reducido, coincidiendo con AIC. Las medias posteriores son 122.9366 para el intercepto, 1.6102 para `negtemp`, 0.0255 para `manuf`, -3.6168 para `wind` y 0.5239 para `precip`. Los intervalos de `negtemp`, `manuf` y `precip` no contienen cero. Por ejemplo, manteniendo las demás covariables, una pulgada adicional de precipitación anual se asocia con un aumento esperado de 0.5239 microgramos de SO2 por metro cúbico; su intervalo de credibilidad es $(0.0706,0.9766)$.
+
+### Comprobación predictiva posterior
+
+La evaluación del ajuste es crítica. Una comprobación predictiva posterior usa una réplica $y_i^*$ con densidad
+
+$$
+p(y_i^*\mid\mathbf y)
+=\int p(y_i^*\mid\boldsymbol\theta)
+p(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta
+$$
+
+y el valor predictivo posterior $P(y_i^*<y_i\mid\mathbf y)$. Valores muy próximos a cero o uno pueden señalar observaciones incompatibles con el modelo [@meng1994].
+
+```{r}
+usair.inla3.pred <- inla(
+  usair.formula2, data = usair,
+  control.predictor = list(link = 1, compute = TRUE)
+)
+post.predicted.pval <- numeric(nrow(usair))
+for (i in seq_len(nrow(usair))) {
+  post.predicted.pval[i] <- inla.pmarginal(
+    q = usair$SO2[i],
+    marginal = usair.inla3.pred$marginals.fitted.values[[i]]
+  )
+}
+hist(post.predicted.pval, breaks = 10,
+     xlab = "Valor p predictivo posterior", main = "")
+```
+
+Muchos valores quedan cerca de los extremos. Sin embargo, aun bajo el modelo verdadero los valores predictivos posteriores no tienen por qué ser uniformes [@hjort2006; @marshall2007]. `SO2` está sesgado a la derecha y `manuf` posee gran varianza y valores atípicos; por ello continuamos con otros diagnósticos.
+
+### Comprobación por validación cruzada
+
+Las medidas de dejar uno fuera son
+
+$$
+\operatorname{CPO}_i=p(y_i\mid\mathbf y_{-i}),\qquad
+\operatorname{PIT}_i=P(Y_i<y_i\mid\mathbf y_{-i}).
+$$
+
+PIT difiere del valor predictivo anterior porque excluye la observación $i$. INLA las calcula sin reajustar $n$ veces al usar `control.compute = list(cpo = TRUE)`. Se encuentran en `result$cpo$cpo` y `result$cpo$pit`. Problemas numéricos potenciales aparecen en `result$cpo$failure`; aquí:
+
+```{r}
+sum(usair.inla3$cpo$failure)
+```
+
+devuelve cero. Si el modelo está bien ajustado, PIT debe aproximarse a una uniforme [@diebol1998; @gneiting2007]:
+
+```{r}
+hist(usair.inla3$cpo$pit, breaks = 10, xlab = "PIT", main = "")
+qqplot(
+  qunif(ppoints(length(usair.inla3$cpo$pit))),
+  usair.inla3$cpo$pit,
+  xlab = "Cuantiles teóricos", ylab = "Cuantiles muestrales"
+)
+qqline(usair.inla3$cpo$pit,
+       distribution = function(p) qunif(p), prob = c(.1, .9))
+```
+
+El histograma y el gráfico Q--Q son razonablemente uniformes y mucho mejores que el histograma predictivo posterior.
+
+El producto de CPO actúa como «pseudo-verosimilitud marginal». Su logaritmo, LPML [@geisser1979], es
+
+$$
+\operatorname{LPML}=\sum_{i=1}^{n}\log\operatorname{CPO}_i.
+$$
+
+Es una alternativa estable a DIC; a diferencia de este, valores mayores son mejores:
+
+```{r}
+LPML1 <- sum(log(usair.inla1$cpo$cpo))
+LPML3 <- sum(log(usair.inla3$cpo$cpo))
+c(LPML1, LPML3)
+```
+
+Los valores son -176.9495 y -175.6892, favoreciendo nuevamente al modelo reducido. Un diagrama punto a punto de CPO también coloca la mayoría de los casos por encima de la línea de igualdad cuando el modelo reducido mejora la predicción.
+
+### Análisis bayesiano de residuos
+
+Para $y_i=\mathbf x_i^T\boldsymbol\beta+\varepsilon_i$, los residuos bayesianos o realizados son
+
+$$
+r_i=\varepsilon_i(\boldsymbol\beta)
+=y_i-\mathbf x_i^T\boldsymbol\beta. \qquad\text{(3.9)}
+$$
+
+A diferencia del residuo clásico, basado en una estimación puntual, poseen una distribución posterior inducida por las posteriores de $\boldsymbol\beta$ y $\sigma^2$. Podemos muestrear parámetros, producir residuos y examinar sus medias o medianas. Graficarlos por índice, contra valores ajustados o predictores permite detectar atípicos, no normalidad o heterocedasticidad. La suma de cuadrados o valores absolutos ofrece una medida global [@chaloner1988].
+
+`brinla` facilita el análisis:
+
+```{r}
+bri.lmresid.plot(usair.inla2)
+bri.lmresid.plot(
+  usair.inla2, usair$negtemp,
+  xlab = "negtemp", smooth = TRUE
+)
+```
+
+Los residuos fluctúan alrededor de cero. La observación 31, Providence, tiene un residuo 59.6927 y parece atípica: su `SO2` de 94 supera ampliamente al de ciudades comparables. La curva suave con intervalo de credibilidad, estimada mediante caminata aleatoria de orden 2, no presenta tendencia especial, respaldando los supuestos.
+
+## Regresión robusta
+
+La inferencia normal es vulnerable a valores atípicos. Los errores $t$ proporcionan una extensión robusta para colas más largas o puntos extremos [@lange1989]. Si $Y\sim t(\mu,\sigma,\nu)$,
+
+$$
+f(y\mid\mu,\sigma,\nu)=
+\frac{\Gamma((\nu+1)/2)}{\sigma\sqrt{\nu\pi}\Gamma(\nu/2)}
+\left[1+\frac{(y-\mu)^2}{\nu\sigma^2}\right]^{-(\nu+1)/2}.
+$$
+
+Puede verse como mezcla: si $\eta_i\sim\operatorname{Gamma}(\nu/2,\nu/2)$ y $y_i\mid\eta_i\sim N(\mu_i,\sigma^2/\eta_i)$, entonces $y_i\sim t(\mu_i,\sigma,\nu)$. El modelo de regresión usa $\mu_i=\beta_0+\cdots+\beta_px_{ip}$ e INLA representa la precisión $\tau=\sigma^{-2}$.
+
+Para reducir la influencia de Providence:
+
+```{r}
+usair.inla4 <- inla(
+  usair.formula2, family = "T", data = usair,
+  control.compute = list(dic = TRUE, cpo = TRUE)
+)
+round(usair.inla4$summary.fixed, 4)
+round(usair.inla4$summary.hyperpar, 4)
+```
+
+Las medias posteriores de intercepto, `negtemp`, `manuf`, `wind` y `precip` son 119.2344, 1.4588, 0.0266, -3.9300 y 0.4356. Los grados de libertad tienen media 10.9839. Frente al modelo normal, intercepto, `negtemp` y `precip` disminuyen y sus desviaciones aumentan, consecuencia de las colas pesadas: los extremos ejercen menor influencia.
+
+## Análisis de varianza
+
+ANOVA reúne modelos para determinar diferencias o semejanzas entre grupos y se usa ampliamente en experimentos [@montgomery2013]. Es un caso particular de regresión con variables categóricas. Para un factor $A$ con niveles $i=1,\ldots,a$:
+
+$$
+y_{ij}=\mu_i+\varepsilon_{ij}
+=\mu_0+\alpha_i+\varepsilon_{ij},
+\qquad \varepsilon_{ij}\sim N(0,\sigma^2).
+$$
+
+Para identificar los $a+1$ parámetros se impone una restricción. La parametrización de esquina, usada por INLA, fija $\alpha_1=0$; entonces $\mu_0$ es la media del primer nivel.
+
+En un factorial de dos factores,
+
+$$
+y_{ijk}=\mu_0+\alpha_i+\beta_j+\gamma_{ij}+\varepsilon_{ijk}, \qquad\text{(3.12)}
+$$
+
+con efectos principales e interacción. Como hay más parámetros que medias de celda, se fijan a cero los efectos del primer nivel y sus interacciones de referencia.
+
+En la literatura frecuentista se distingue entre efectos fijos y aleatorios. En Bayes todos los parámetros son variables aleatorias y la diferencia se refleja en las previas. Un efecto «fijo» puede recibir una normal difusa de precisión conocida; uno «aleatorio», una normal cuya varianza recibe hiperprevia. Aquí tratamos efectos fijos; el capítulo 5 estudia los aleatorios.
+
+Los datos `painrelief` proceden de un experimento sobre codeína y acupuntura para aliviar dolor dental posoperatorio en hombres. Se usó un diseño en bloques aleatorizados con dos factores binarios: cápsula de codeína o azúcar y puntos de acupuntura activos o inactivos. Treinta y dos sujetos se asignaron a ocho bloques de cuatro según su tolerancia al dolor. Una puntuación mayor indica más alivio.
+
+```{r}
+data(painrelief, package = "brinla")
+painrelief$PainLevel <- as.factor(painrelief$PainLevel)
+painrelief$Codeine <- as.factor(painrelief$Codeine)
+painrelief$Acupuncture <- as.factor(painrelief$Acupuncture)
+painrelief.inla <- inla(
+  Relief ~ PainLevel + Codeine * Acupuncture,
+  data = painrelief
+)
+round(painrelief.inla$summary.fixed, 4)
+```
+
+Los efectos principales de codeína y acupuntura son claramente distintos de cero: medias 0.4625 y 0.5750, con intervalos completamente positivos. La interacción tiene media 0.1500 e intervalo $(-0.0186,0.3183)$, por lo que no es significativa al 95 %. Los niveles de dolor más altos reciben en general mayores puntuaciones de alivio, salvo el nivel 4. `PainLevel` es un factor de confusión importante que debe incluirse.
+
+## Regresión ridge para multicolinealidad
+
+La multicolinealidad hace imprecisos los coeficientes parciales, infla sus errores estándar y dificulta evaluar la importancia relativa de los predictores. La regresión por componentes principales sustituye predictores correlacionados por componentes no correlacionados [@jolliffe1982]. Ridge ofrece otra solución penalizando el tamaño de los coeficientes [@hoerl1970]:
+
+$$
+\min_{\boldsymbol\beta}
+\left\{(\mathbf y-\mathbf X\boldsymbol\beta)^T
+(\mathbf y-\mathbf X\boldsymbol\beta)
++\lambda\boldsymbol\beta^T\boldsymbol\beta\right\},
+$$
+
+con $\lambda>0$. El estimador es
+
+$$
+\widehat{\boldsymbol\beta}_{\mathrm{ridge}}
+=(\mathbf X^T\mathbf X+\lambda\mathbf I)^{-1}\mathbf X^T\mathbf y.
+$$
+
+Introduce sesgo creciente con $\lambda$, pero reduce varianzas. Coincide con la media posterior si, conocida $\sigma^2$, asignamos independientemente $\beta_j\sim N(0,\sigma^2/\lambda)$. Una $\lambda$ grande concentra la previa cerca de cero. Como la penalización opera sobre la norma, los predictores deben estandarizarse.
+
+El ejemplo `frencheconomy` analiza importaciones (`IMPORT`), producción doméstica (`DOPROD`), formación de existencias (`STOCK`) y consumo (`CONSUM`) en miles de millones de francos entre 1949 y 1966. `DOPROD` y `CONSUM` tienen correlación 0.9989.
+
+```{r}
+data(frencheconomy, package = "brinla")
+round(cor(frencheconomy[, -1]), 4)
+fe.scaled <- cbind(
+  frencheconomy[, 1:2],
+  scale(frencheconomy[, c(-1, -2)])
+)
+```
+
+INLA implementa ridge compartiendo un efecto aleatorio mediante `copy`:
+
+```{r}
+n <- nrow(fe.scaled)
+fe.scaled$beta1 <- rep(1, n)
+fe.scaled$beta2 <- rep(2, n)
+fe.scaled$beta3 <- rep(3, n)
+param.beta <- list(prec = list(param = c(1e-3, 1e-3)))
+
+formula.ridge <- IMPORT ~
+  f(beta1, DOPROD, model = "iid", values = 1:3,
+    hyper = param.beta) +
+  f(beta2, STOCK, copy = "beta1", fixed = TRUE) +
+  f(beta3, CONSUM, copy = "beta1", fixed = TRUE)
+
+frencheconomy.ridge <- inla(formula.ridge, data = fe.scaled)
+```
+
+Las medias ridge para `DOPROD`, `STOCK` y `CONSUM` son 5.1608, 0.7205 y 6.9279. En la regresión bayesiana estándar son 2.9951, 0.7197 y 9.1424, con desviaciones cercanas a 10.88 para los dos predictores colineales, frente a 5.25 con ridge. Como ambos se correlacionan fuertemente con `IMPORT`, el reparto ridge —aumento de `DOPROD` y reducción de `CONSUM`— resulta más plausible y preciso.
+
+La comparación frecuentista usa:
+
+```{r}
+library(MASS)
+ridge2 <- lm.ridge(
+  IMPORT ~ DOPROD + STOCK + CONSUM,
+  data = fe.scaled, lambda = seq(0, 1, length = 100)
+)
+ridge2.final <- lm.ridge(
+  IMPORT ~ DOPROD + STOCK + CONSUM,
+  data = fe.scaled, lambda = ridge2$kHKB
+)
+ridge2.final
+```
+
+El criterio de Hoerl--Kennard--Baldwin produce 4.9560, 0.7176 y 7.1669, muy próximo a INLA.
+
+## Regresión con errores autorregresivos
+
+En el modelo estándar $\boldsymbol\varepsilon\sim N(\mathbf0,\sigma^2\mathbf I)$. En muchas aplicaciones las varianzas no son constantes o los errores están correlacionados. La generalización es
+
+$$
+\boldsymbol\varepsilon\sim N(\mathbf0,\boldsymbol\Sigma),
+$$
+
+con $\boldsymbol\Sigma$ simétrica definida positiva. Si fuera conocida, mínimos cuadrados generalizados minimizaría
+
+$$
+(\mathbf y-\mathbf X\boldsymbol\beta)^T
+\boldsymbol\Sigma^{-1}
+(\mathbf y-\mathbf X\boldsymbol\beta),
+$$
+
+y daría
+
+$$
+\widehat{\boldsymbol\beta}
+=(\mathbf X^T\boldsymbol\Sigma^{-1}\mathbf X)^{-1}
+\mathbf X^T\boldsymbol\Sigma^{-1}\mathbf y.
+$$
+
+Pero $\boldsymbol\Sigma$ posee $n(n+1)/2$ elementos distintos y debe estructurarse con pocos parámetros.
+
+En series temporales, observaciones adyacentes tienden a parecerse. Ignorar la autocorrelación suele subestimar $\sigma^2$ y los errores estándar, invalidando la inferencia. Consideremos
+
+$$
+y_t=\beta_0+\beta_1x_{t1}+\cdots+\beta_px_{tp}+\varepsilon_t,
+$$
+
+con errores estacionarios y $\operatorname{Cor}(\varepsilon_t,\varepsilon_{t-s})=\rho_s$. El AR(1) más común es
+
+$$
+\varepsilon_t=\rho\varepsilon_{t-1}+\eta_t,
+\qquad \eta_t\stackrel{\mathrm{iid}}\sim N(0,\sigma_\eta^2).
+$$
+
+Entonces $\sigma^2=\sigma_\eta^2/(1-\rho^2)$ y $\rho_s=\rho^s$, que decae exponencialmente. AR(2) añade $\rho_2\varepsilon_{t-2}$; también existen procesos MA y ARMA [@shumway2011].
+
+La función de autocorrelación muestral de residuos es $\widehat\rho(s)=\widehat\gamma(s)/\widehat\gamma(0)$. La autocorrelación parcial en retardo $s$ es la correlación directa una vez retirada la dependencia lineal de retardos intermedios. Un AR($s$) tiene ACF decreciente exponencialmente y PACF con $s$ picos no nulos. Estas gráficas ayudan a identificar la estructura. El estadístico Durbin--Watson es una prueba frecuentista tradicional; desde una perspectiva bayesiana se ha sugerido usarlo, junto con las gráficas, como comprobación rápida.
+
+### Ejemplo: desempleo en Nueva Zelanda
+
+Los datos `nzunemploy` contienen tasas trimestrales de desempleo juvenil (15--19 años) y adulto entre marzo de 1986 y junio de 2011. En junio de 2008 se abolió el salario mínimo diferencial juvenil. Queremos estudiar la relación antes y después de la reforma.
+
+```{r}
+data(nzunemploy, package = "brinla")
+nzunemploy$time <- seq_len(nrow(nzunemploy))
+nzunemploy$centeredadult <- with(nzunemploy, adult - mean(adult))
+```
+
+Las dos series fluctúan de modo considerable pero gradual y siguen patrones semejantes. Centrar la tasa adulta facilita interpretar coeficientes. Un primer ajuste independiente es:
+
+```{r}
+formula1 <- youth ~ centeredadult * policy
+nzunemploy.inla1 <- inla(formula1, data = nzunemploy)
+round(nzunemploy.inla1$summary.fixed, 4)
+```
+
+Las medias son 16.2823 para el intercepto, 1.5333 para la tasa adulta centrada, 9.4417 para la política igualitaria y 2.8533 para su interacción; todos los intervalos son positivos. Sin embargo, los residuos bayesianos muestran autocorrelación:
+
+```{r}
+nzunemploy.res1 <- bri.lmresid.plot(nzunemploy.inla1, type = "o")
+acf(nzunemploy.res1$resid, main = "")
+acf(nzunemploy.res1$resid, type = "partial", main = "")
+```
+
+La ACF decae exponencialmente y la PACF muestra un pico alto en el primer retardo, sugiriendo AR(1). Lo incorporamos como campo latente y fijamos casi en infinito la precisión residual independiente, pues la incertidumbre ya está representada por el AR(1):
+
+```{r}
+formula2 <- youth ~ centeredadult * policy + f(time, model = "ar1")
+nzunemploy.inla2 <- inla(
+  formula2, data = nzunemploy,
+  control.family = list(
+    hyper = list(prec = list(initial = 15, fixed = TRUE))
+  )
+)
+round(nzunemploy.inla2$summary.fixed, 4)
+round(nzunemploy.inla2$summary.hyperpar, 4)
+```
+
+Los coeficientes apenas cambian: 16.3466, 1.5196, 8.9611 y 2.5083. Sus desviaciones, en cambio, aumentan notablemente, confirmando que ignorar autocorrelación subestimaba la incertidumbre. La correlación AR(1) tiene media 0.4953 e intervalo $(0.3094,0.6932)$, evidencia de autocorrelación moderada.
+
+Como comprobación frecuentista:
+
+```{r}
+library(nlme)
+nzunemploy.gls <- gls(
+  youth ~ centeredadult * policy,
+  correlation = corAR1(form = ~ 1),
+  data = nzunemploy
+)
+summary(nzunemploy.gls)
+```
+
+GLS estima $\rho=0.5012$ y coeficientes 16.3286, 1.5222, 9.0826 y 2.5450, muy próximos a INLA.
+

@@ -1,0 +1,529 @@
+# Teoría de INLA
+
+La metodología de aproximaciones de Laplace anidadas integradas (INLA) fue presentada por primera vez por @rue2009, seguida por los desarrollos de @martins2013 y la revisión más reciente de @rue2017. Es un enfoque determinista para realizar inferencia bayesiana aproximada en modelos gaussianos latentes (LGM). En la mayoría de los casos, INLA es más rápido y preciso que las alternativas MCMC para estos modelos. El paquete `INLA` de R permite realizar inferencia bayesiana rápida y confiable en aplicaciones prácticas.
+
+En este capítulo revelaremos los «secretos» del éxito de INLA. Requiere tres componentes esenciales: el marco de los LGM, un campo aleatorio gaussiano de Markov (GMRF) y la aproximación de Laplace. Los introduciremos de arriba abajo. Comenzaremos por los LGM y los modelos estadísticos que pueden expresarse de ese modo; después estudiaremos los GMRF, procesos gaussianos computacionalmente eficientes dentro de esta formulación; finalmente veremos cómo INLA utiliza la antigua técnica de aproximación de Laplace para integrar y producir inferencia bayesiana rápida y precisa.
+
+La teoría no es sencilla y algunas personas quizá prefieran omitir en una primera lectura la sección sobre la aproximación de Laplace. Aun así, vale la pena entender los LGM y GMRF, pues permiten distinguir qué modelos pueden abordarse con INLA y cuáles son imposibles o poco prácticos.
+
+## Modelos gaussianos latentes (LGM)
+
+INLA se restringe a los denominados modelos gaussianos latentes. Tienen una amplia gama de aplicaciones y, de hecho, la mayoría de los modelos bayesianos estructurados adoptan esta forma. Aquí nos concentramos en modelos de regresión, el subconjunto más utilizado. Otros LGM habituales incluyen modelos dinámicos, espaciales y espacio-temporales [@rue2009; @blangiardo2015].
+
+Un ejemplo sencillo es el modelo lineal generalizado bayesiano (GLM), estudiado con detalle en el capítulo 4. Su predictor lineal es
+
+$$
+\eta_i=\beta_0+\beta_1x_i,\qquad i=1,\ldots,n,
+$$
+
+donde $\beta_0$ es el intercepto, $x_i$ la covariable y $\beta_1$ la pendiente o efecto lineal. Se supone que $y_i$ sigue una distribución de la familia exponencial y que su media condicional $\mu_i$ se relaciona con $\eta_i$ mediante una función de enlace $g(\cdot)$, de modo que $\eta_i=g(\mu_i)$. INLA ofrece numerosas verosimilitudes; la gaussiana es la predeterminada. La lista puede consultarse así:
+
+```{r}
+library(INLA)
+names(inla.models()$likelihood)
+```
+
+Aunque la verosimilitud no tiene que ser gaussiana, en un LGM cada predictor latente $\eta_i$ debe seguir una distribución normal condicionada a sus hiperparámetros. Debemos, por tanto, usar previas gaussianas
+
+$$
+\beta_0\sim N(\mu_0,\sigma_0^2),\qquad
+\beta_1\sim N(\mu_1,\sigma_1^2),
+$$
+
+lo que implica
+
+$$
+\eta_i\sim N(\mu_0+\mu_1x_i,\,\sigma_0^2+\sigma_1^2x_i^2).
+$$
+
+Mediante álgebra lineal puede mostrarse que $\boldsymbol\eta=(\eta_1,\ldots,\eta_n)^T$ es un proceso gaussiano con vector de medias $\boldsymbol\mu$ y matriz de covarianzas $\boldsymbol\Sigma$. Las varianzas $\sigma_0^2$ y $\sigma_1^2$ son hiperparámetros que pueden fijarse o estimarse asignándoles hiperprevias.
+
+Podemos adoptar una forma aditiva más general:
+
+$$
+\eta_i=\beta_0+\sum_{j=1}^{p}\beta_jx_{ji}
+       +\sum_{k=1}^{K}f_k(z_{ki}). \qquad\text{(2.1)}
+$$
+
+Las covariables y los componentes $f_k(\cdot)$ permiten relajar la relación lineal, introducir efectos aleatorios o ambas cosas. Los efectos suaves no lineales pueden representarse mediante términos paramétricos —por ejemplo, cuadráticos— o modelos no paramétricos como caminatas aleatorias, P-splines y procesos gaussianos. Para representar sobredispersión causada por heterogeneidad no observada o correlación en datos longitudinales, pueden introducirse efectos aleatorios con distribuciones normales independientes de media cero.
+
+En muchas aplicaciones el predictor es una suma de efectos aleatorios, efectos lineales y efectos suaves, como en (2.1). Estos modelos se denominan modelos aditivos generalizados (GAM). Para que $\boldsymbol\eta$ sea gaussiano, cada efecto lineal y cada componente deben recibir una previa normal univariante o multivariante. Existe una clase particularmente flexible y eficiente, los GMRF, que permite modelar muchos de estos efectos.
+
+Formulemos ahora un LGM jerárquico genérico en tres etapas. Sea $\mathbf y=(y_1,\ldots,y_n)^T$. En la primera etapa, condicionados a $\boldsymbol\eta$ y a los hiperparámetros $\boldsymbol\theta_1$, suponemos independencia y una distribución de la familia exponencial:
+
+$$
+\pi(\mathbf y\mid\boldsymbol\eta,\boldsymbol\theta_1)
+=\prod_{i=1}^{n}\pi(y_i\mid\eta_i,\boldsymbol\theta_1).
+$$
+
+En la segunda etapa, $\boldsymbol\eta$ es un campo gaussiano latente con densidad
+
+$$
+\pi(\boldsymbol\eta\mid\boldsymbol\theta_2)
+\propto |\mathbf Q_{\boldsymbol\theta_2}|^{1/2}
+\exp\!\left(-\tfrac12
+\boldsymbol\eta^T\mathbf Q_{\boldsymbol\theta_2}\boldsymbol\eta\right),
+$$
+
+donde $\mathbf Q_{\boldsymbol\theta_2}$ es una matriz semidefinida positiva dependiente de los hiperparámetros; su determinante generalizado es el producto de sus valores propios no nulos. Se denomina matriz de precisión y describe la dependencia de los datos. Su inversa, cuando existe, es una matriz de covarianzas.
+
+En la tercera etapa asignamos una previa $\pi(\boldsymbol\theta)$ a $\boldsymbol\theta=(\boldsymbol\theta_1,\boldsymbol\theta_2)$. Puede ser conjunta o un producto de distribuciones. La posterior conjunta es
+
+$$
+\begin{aligned}
+\pi(\boldsymbol\eta,\boldsymbol\theta\mid\mathbf y)
+&\propto \pi(\boldsymbol\theta)
+\pi(\boldsymbol\eta\mid\boldsymbol\theta)
+\prod_{i=1}^{n}\pi(y_i\mid\eta_i,\boldsymbol\theta_1)\\
+&\propto \pi(\boldsymbol\theta)
+|\mathbf Q_{\boldsymbol\theta}|^{1/2}
+\exp\!\left[-\tfrac12\boldsymbol\eta^T
+\mathbf Q_{\boldsymbol\theta}\boldsymbol\eta
++\sum_i\log\pi(y_i\mid\eta_i,\boldsymbol\theta_1)\right]. \qquad\text{(2.2)}
+\end{aligned}
+$$
+
+La inferencia bayesiana se deriva de esta expresión. INLA aplica la aproximación de Laplace anidada descrita más adelante para obtener distribuciones posteriores aproximadas de cada parámetro desconocido.
+
+No todos los LGM pueden ajustarse eficientemente con INLA. En general se requieren además estas condiciones:
+
+1. El número de hiperparámetros debe ser pequeño, normalmente entre 2 y 5 y no mayor que 20.
+2. Cuando $n$ es grande, de $10^4$ a $10^6$, $\boldsymbol\eta$ debe ser un GMRF.
+3. Cada $y_i$ debe depender solo de un componente del campo, por ejemplo $\eta_i$.
+
+Estas condiciones son importantes tanto por razones computacionales como para asegurar la precisión de las aproximaciones. Las dos primeras deben cumplirse estrictamente; la última puede relajarse hasta cierto punto [@martins2013].
+
+## Campos aleatorios gaussianos de Markov (GMRF)
+
+Para que INLA trabaje eficientemente, el campo latente no solo debe ser gaussiano, sino también un GMRF. Consideremos un caso sencillo: $\eta_i$ sigue un proceso autorregresivo de primer orden, AR(1). Si el valor actual depende del inmediatamente anterior,
+
+$$
+\begin{cases}
+\eta_1\sim N\!\left(0,\sigma_\eta^2/(1-\rho^2)\right),\\
+\eta_i\mid\eta_1,\ldots,\eta_{i-1}
+\sim N(\rho\eta_{i-1},\sigma_\eta^2),&i=2,\ldots,n.
+\end{cases}
+$$
+
+El parámetro $|\rho|<1$ es la correlación entre $\eta_i$ y $\eta_{i-1}$. La distribución marginal de cada $\eta_i$ es gaussiana de media cero y varianza $\sigma_\eta^2/(1-\rho^2)$, mientras que
+
+$$
+\operatorname{Cov}(\eta_i,\eta_j)
+=\frac{\sigma_\eta^2\rho^{|i-j|}}{1-\rho^2},
+$$
+
+que decrece con $|i-j|$. Por ello, $\boldsymbol\eta\sim N(\mathbf0,\boldsymbol\Sigma)$ y $\boldsymbol\Sigma$ es una matriz densa de $n\times n$. Los cálculos con matrices densas son costosos, lo que parecería hacer poco conveniente un AR(1) para datos grandes.
+
+Por fortuna, el AR(1) posee una matriz de precisión dispersa. A partir de
+
+$$
+\pi(\boldsymbol\eta)=\pi(\eta_1)\pi(\eta_2\mid\eta_1)
+\cdots\pi(\eta_n\mid\eta_{n-1},\ldots,\eta_1)
+$$
+
+se obtiene una normal multivariante con
+
+$$
+\mathbf Q=\sigma_\eta^{-2}
+\begin{pmatrix}
+1&-\rho&&&\\
+-\rho&1+\rho^2&-\rho&&\\
+&\ddots&\ddots&\ddots&\\
+&&-\rho&1+\rho^2&-\rho\\
+&&&-\rho&1
+\end{pmatrix}.
+$$
+
+Solo son distintos de cero los elementos de la diagonal principal y de las diagonales inmediatamente superior e inferior. La razón es que, dadas las demás variables, $\eta_i$ solo depende de su vecina inmediata. En otras palabras, $\eta_i$ y $\eta_j$ son condicionalmente independientes cuando $|i-j|>1$. Por ejemplo,
+
+$$
+\pi(\eta_2,\eta_4\mid\eta_1,\eta_3)
+=\pi(\eta_2\mid\eta_1)\pi(\eta_4\mid\eta_3).
+$$
+
+La correlación condicional entre $\eta_i$ y $\eta_j$ está dada por
+$-Q_{ij}/\sqrt{Q_{ii}Q_{jj}}$; por tanto, un cero en $Q_{ij}$ expresa independencia condicional. En procesos AR de orden superior, la precisión es menos dispersa porque cada variable depende de más valores anteriores.
+
+En general, $\boldsymbol\eta$ es un GMRF si posee una densidad normal multivariante y una estructura adicional de independencia condicional, denominada propiedad de Markov. Los GMRF se utilizan extensamente en numerosos campos [@rueheld2005]. Sus distintas estructuras representan nuestras creencias sobre la dependencia local entre variables, pero todas comparten una matriz de precisión dispersa.
+
+Esto produce un beneficio computacional enorme. Invertir la covarianza densa de un AR(1) cuesta $O(n^3)$, mientras que factorizar su precisión tridiagonal cuesta $O(n)$. La memoria también se reduce de $O(n^2)$ a $O(n)$, lo que facilita modelos mucho mayores.
+
+Al construir modelos aditivos como (2.1), aparece parte de la «magia» de INLA: su distribución conjunta también es un GMRF y la matriz de precisión resulta de sumar las precisiones de covariables y componentes. Esta distribución debe formarse muchas veces porque depende de $\boldsymbol\theta$, pero puede manipularse como un GMRF cuya precisión es fácil de calcular. La dispersión de la matriz aumenta aún más la eficiencia.
+
+## Aproximación de Laplace e INLA
+
+La aproximación de Laplace se utiliza para aproximar
+
+$$
+I_n=\int_a^b\exp\{nf(x)\}\,dx,\qquad n\to\infty.
+$$
+
+Sea $x_0$ la moda de $f(x)$. Una expansión de Taylor alrededor de $x_0$, donde $f'(x_0)=0$, produce
+
+$$
+\begin{aligned}
+I_n
+&\approx \exp\{nf(x_0)\}
+\int_a^b\exp\left\{\frac{n}{2}(x-x_0)^2f''(x_0)\right\}dx\\
+&\approx \exp\{nf(x_0)\}
+\sqrt{\frac{2\pi}{-nf''(x_0)}}.
+\end{aligned}
+$$
+
+La integral intermedia es gaussiana. Si $nf(x)$ se interpreta como una suma de log-verosimilitudes y $x$ como el parámetro desconocido, la aproximación será exacta cuando $n\to\infty$, siempre que se cumpla el teorema central del límite. Se extiende de inmediato a integrales multidimensionales con una tasa de error favorable.
+
+Veamos cómo constituye la piedra angular de INLA. Supongamos dos conteos, $y_1=1$ y $y_2=2$, con distribución Poisson de media $\lambda_i$. Usamos enlace logarítmico, $\lambda_i=\exp(\eta_i)$, y un AR(1) para $\eta_i$. La posterior es
+
+$$
+\pi(\boldsymbol\eta\mid\mathbf y)
+\propto\exp\!\left(-\tfrac12\boldsymbol\eta^T
+\mathbf Q_{\boldsymbol\theta}\boldsymbol\eta\right)
+\exp(\eta_1+2\eta_2-e^{\eta_1}-e^{\eta_2}),
+$$
+
+con hiperparámetros de escala y autocorrelación. Si por ahora se consideran constantes, queremos aproximar las marginales de $\eta_1$ y $\eta_2$. Aplicar directamente una aproximación gaussiana bidimensional no representa bien su ubicación ni su asimetría. El desempeño mejora mediante una secuencia de aproximaciones condicionadas:
+
+$$
+\widetilde\pi(\eta_1\mid\mathbf y)
+=\left.
+\frac{\pi(\boldsymbol\eta\mid\mathbf y)}
+{\widetilde\pi_G(\eta_2\mid\eta_1,\mathbf y)}
+\right|_{\eta_2=\eta_2^*(\eta_1)},
+$$
+
+donde el denominador es una aproximación gaussiana a la condicional completa. Cada condicional se acerca mucho más a una gaussiana que la distribución conjunta. Esta es la idea clave: aplicar Laplace solo a densidades casi gaussianas y sustituir dependencias complejas por condicionamiento.
+
+En un LGM general, el objetivo consiste en aproximar las marginales $\pi(\eta_i\mid\mathbf y)$ y $\pi(\theta_j\mid\mathbf y)$. INLA divide el problema en tres tareas: aproximar la posterior conjunta de los hiperparámetros, aproximar las marginales condicionales de cada $\eta_i$ dados los hiperparámetros y explorar la aproximación de $\pi(\boldsymbol\theta\mid\mathbf y)$ para integrarla numéricamente. El resultado tiene la forma
+
+$$
+\widetilde\pi(\eta_i\mid\mathbf y)
+=\int\widetilde\pi(\eta_i\mid\boldsymbol\theta,\mathbf y)
+\widetilde\pi(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta. \qquad\text{(2.3a)}
+$$
+
+$$
+\widetilde\pi(\theta_j\mid\mathbf y)
+=\int\widetilde\pi(\boldsymbol\theta\mid\mathbf y)\,d\boldsymbol\theta_{-j}. \qquad\text{(2.3b)}
+$$
+
+### Aproximación de $\pi(\boldsymbol\theta\mid\mathbf y)$
+
+La aproximación de Laplace a la posterior conjunta de los hiperparámetros es
+
+$$
+\widetilde\pi(\boldsymbol\theta\mid\mathbf y)
+\propto
+\left.
+\frac{\pi(\boldsymbol\eta,\boldsymbol\theta\mid\mathbf y)}
+{\widetilde\pi_G(\boldsymbol\eta\mid\boldsymbol\theta,\mathbf y)}
+\right|_{\boldsymbol\eta=\boldsymbol\eta^*(\boldsymbol\theta)}. \qquad\text{(2.4)}
+$$
+
+donde $\widetilde\pi_G$ es una aproximación gaussiana a la condicional completa, obtenida haciendo coincidir la moda y la curvatura, y $\boldsymbol\eta^*(\boldsymbol\theta)$ es la moda para un valor dado de los hiperparámetros. Será exacta si la condicional es gaussiana. Adopta la forma
+
+$$
+\widetilde\pi_G(\boldsymbol\eta\mid\boldsymbol\theta,\mathbf y)
+\propto |\mathbf R_{\boldsymbol\theta}|^{1/2}
+\exp\!\left[-\tfrac12(\boldsymbol\eta-\boldsymbol\mu_{\boldsymbol\theta})^T
+\mathbf R_{\boldsymbol\theta}
+(\boldsymbol\eta-\boldsymbol\mu_{\boldsymbol\theta})\right]. \qquad\text{(2.5)}
+$$
+
+con $\mathbf R_{\boldsymbol\theta}=\mathbf Q_{\boldsymbol\theta}+\operatorname{diag}(\mathbf c_{\boldsymbol\theta})$, donde $\mathbf c$ contiene las segundas derivadas negativas de la log-verosimilitud en la moda. Sigue siendo un GMRF con la misma estructura de dependencia: las observaciones solo desplazan la media y modifican la diagonal de la precisión. Esto hace barata su evaluación para cada $\boldsymbol\theta$ y suele producir una buena aproximación.
+
+Las transformaciones estabilizadoras de varianza reducen colas largas y asimetrías. Para un AR(1), INLA transforma la precisión marginal $\kappa$ y la correlación $\rho$ como
+
+$$
+\theta_1=\log\kappa,\qquad
+\theta_2=\log\frac{1+\rho}{1-\rho},
+$$
+
+y utiliza la Hessiana en la moda para construir combinaciones lineales casi independientes de los hiperparámetros.
+
+### Aproximación de $\pi(\eta_i\mid\boldsymbol\theta,\mathbf y)$
+
+Hay tres opciones con distintos compromisos entre velocidad y precisión:
+
+- **Gaussiana:** usa directamente las marginales de (2.5). Solo exige calcular varianzas marginales a partir de la precisión dispersa. Es rápida y a menudo razonable, pero puede errar en ubicación o asimetría.
+- **Laplace completa:** vuelve a aplicar Laplace al cociente entre la posterior conjunta y una aproximación gaussiana condicional de $\boldsymbol\eta_{-i}$. Es más precisa, pero obliga a localizar muchas modas y factorizar repetidamente matrices de $(n-1)\times(n-1)$.
+- **Laplace simplificada:** expande numerador y denominador hasta tercer orden, corrigiendo ubicación y asimetría con un costo mucho menor.
+
+Se eligen mediante `strategy` dentro de `control.inla`:
+
+```{r}
+inla(..., control.inla = list(strategy = "laplace"), ...)
+```
+
+Los valores posibles son `"gaussian"`, `"simplified.laplace"` y `"laplace"`; la aproximación simplificada es la predeterminada.
+
+### Exploración de $\widetilde\pi(\boldsymbol\theta\mid\mathbf y)$
+
+Para integrar la incertidumbre en (2.3a) no es necesaria una exploración exhaustiva, sino buenos puntos de evaluación. Primero se localiza la moda $\boldsymbol\theta^*$ y se calcula la Hessiana negativa $\mathbf H$. Si $\mathbf H^{-1}=\mathbf V\boldsymbol\Lambda\mathbf V^T$, se estandariza el espacio mediante
+
+$$
+\mathbf z=(\mathbf V\boldsymbol\Lambda^{1/2})^{-1}
+(\boldsymbol\theta-\boldsymbol\theta^*).
+$$
+
+Con muy pocos hiperparámetros se construye una cuadrícula que cubra la mayor parte de la masa. Una cuadrícula relativamente gruesa basta para obtener marginales precisas, pero su costo crece exponencialmente: tres puntos por dimensión cuestan $O(3^m)$. En el extremo opuesto, el enfoque Bayes empírico usa solo la moda. Es muy rápido y suele dar resultados razonables cuando la variabilidad del campo latente no está dominada por la de los hiperparámetros, pero subestima la incertidumbre.
+
+Una alternativa intermedia usa un diseño compuesto central (CCD). Guiado por la moda y la Hessiana, selecciona puntos que aproximan la función desconocida mediante una superficie de segundo orden. Requiere mucho menos cómputo que la cuadrícula y aún captura la variabilidad cuando la dimensión es demasiado grande.
+
+Las estrategias `"grid"`, `"eb"` y `"ccd"` se especifican con `int.strategy`:
+
+```{r}
+inla(..., control.inla = list(int.strategy = "grid"), ...)
+```
+
+La opción automática predeterminada usa la cuadrícula cuando $m\leq2$ y CCD cuando $m>2$; Bayes empírico solo se utiliza si se solicita expresamente.
+
+### Aproximación de $\pi(\theta_j\mid\mathbf y)$
+
+Con dimensión pequeña podrían sumarse directamente los demás hiperparámetros, pero cada evaluación exige calcular (2.5) y el costo vuelve a crecer exponencialmente. Otra aproximación de Laplace condicional también resulta costosa. INLA aprovecha los puntos ya evaluados al explorar la posterior conjunta.
+
+Una normal multivariante ajustada a la moda y curvatura no exige cómputo adicional, pero las marginales reales pueden ser asimétricas. Durante mucho tiempo INLA corrigió esta carencia mediante mezclas normales con escalas distintas por eje y dirección, seguidas por integración numérica. El procedimiento era preciso y rápido, pero la integración multidimensional podía volverse inestable con muchos hiperparámetros y generar picos artificiales.
+
+@martins2013 propuso un algoritmo sin integración. Cada marginal estandarizada se aproxima directamente mediante dos mitades normales con escalas $\sigma_{j+}$ y $\sigma_{j-}$ distintas según el signo. Las escalas se estiman sin integración. Pierde algo de precisión respecto de una cuadrícula intensiva, pero entrega resultados sensatos con costo casi nulo y es el método predeterminado. Para refinar con la cuadrícula puede usarse:
+
+```{r}
+result.refinado <- inla.hyperpar(result)
+```
+
+### Ejemplo: datos simulados
+
+Consideremos
+
+$$
+y_i\mid\eta_i\sim\operatorname{Poisson}(E_i\lambda_i),
+\qquad \lambda_i=\exp(\eta_i),
+$$
+
+donde $E_i$ es una exposición y $\boldsymbol\eta$ sigue un AR(1) con correlación $\rho=0.8$ y precisión de innovación $\tau=10$. Simulamos:
+
+```{r}
+set.seed(1)
+n <- 50
+rho <- 0.8
+prec <- 10
+E <- sample(c(5, 4, 10, 12), size = n, replace = TRUE)
+eta <- arima.sim(list(order = c(1, 0, 0), ar = rho),
+                 n = n, sd = sqrt(1/prec))
+y <- rpois(n, E * exp(eta))
+```
+
+INLA reparametriza $\tau$ y $\rho$, asigna una previa log-gamma al primer parámetro transformado y una normal al segundo. El modelo se ajusta así:
+
+```{r}
+datos <- list(y = y, x = 1:n, E = E)
+formula <- y ~ f(x, model = "ar1")
+result.sla <- inla(formula, family = "poisson", data = datos, E = E)
+```
+
+La fórmula define la dependencia de la respuesta mediante el componente AR(1) incluido con `f()`. Podemos comparar la aproximación simplificada predeterminada con una gaussiana de Bayes empírico:
+
+```{r}
+result.gau <- inla(
+  formula, family = "poisson", data = datos, E = E,
+  control.inla = list(strategy = "gaussian", int.strategy = "eb")
+)
+```
+
+y con la Laplace completa e integración precisa:
+
+```{r}
+result.la <- inla(
+  formula, family = "poisson", data = datos, E = E,
+  control.inla = list(
+    strategy = "laplace", int.strategy = "grid",
+    dz = 0.1, diff.logdens = 20
+  )
+)
+```
+
+`dz` es el paso en la escala estandarizada y `diff.logdens` la diferencia de log-densidad que detiene la integración. En el ejemplo, la Laplace simplificada casi se superpone con la completa; integrar $\boldsymbol\theta$ aumenta correctamente la incertidumbre y representa la asimetría, mientras que la gaussiana de Bayes empírico resulta más estrecha.
+
+La desviación estándar marginal verdadera del AR(1) es
+
+```{r}
+marg.prec <- prec * (1 - rho^2)
+(marg.sd <- 1/sqrt(marg.prec))
+```
+
+```{.text}
+[1] 0.5270463
+```
+
+Las posteriores de $\rho$ y de la desviación estándar marginal se centran alrededor de sus valores verdaderos. Refinarlas mediante `inla.hyperpar(result.sla)` aumenta ligeramente la incertidumbre sin cambiar su forma general.
+
+## Problemas de INLA
+
+### Reproducibilidad
+
+INLA es computacionalmente intensivo y procura aprovechar el equipo disponible. En su funcionamiento normal utiliza la interfaz paralela OpenMP. En teoría, varios núcleos podrían reducir el tiempo por un factor igual a su número; en la práctica la mejora es menor, aunque bienvenida. La consecuencia no deseada es que ejecuciones repetidas pueden producir pequeñas diferencias. Algunos cálculos son sensibles a perturbaciones en los valores iniciales, de modo que a veces la variación se amplifica.
+
+No debería preocuparnos demasiado: suele ser mucho menor que la incertidumbre paramétrica y del modelo. Presentar muchas cifras significativas crea una falsa ilusión de precisión; rara vez una estimación es fiable más allá de la segunda o tercera cifra.
+
+Esta variación difiere de la producida por MCMC. La variabilidad de simulación puede ser considerable y solo se reduce aumentando sustancialmente el tamaño de la simulación. La debida a OpenMP es mucho menor y no depende de la semilla aleatoria.
+
+Cuando se necesita reproducibilidad bit a bit, puede usarse:
+
+```{r}
+inla(..., num.threads = 1)
+```
+
+Esto fuerza un solo procesador. Ejecutar en otro equipo todavía puede producir diferencias. Las respuestas con uno o varios hilos son igualmente válidas; la única ventaja de un hilo es la reproducibilidad exacta. El libro usa el multiprocesamiento predeterminado y acepta el intercambio entre reproducibilidad bit a bit y velocidad.
+
+### Precisión de la aproximación
+
+La integración numérica exige decidir dónde y cuántas veces evaluar una función; la optimización requiere valores iniciales, longitudes de paso, criterios de terminación y más. La precisión puede aumentarse ajustando esos parámetros a costa de tiempo. Los valores predeterminados pueden consultarse mediante:
+
+```{r}
+inla.set.control.inla.default()
+```
+
+Si preocupa la precisión, puede usarse un cálculo más exigente y reproducible:
+
+```{r}
+inla(
+  ...,
+  control.inla = list(
+    strategy = "laplace", int.strategy = "grid",
+    dz = 0.1, diff.logdens = 20
+  ),
+  num.threads = 1
+)
+```
+
+Si el ajuste predeterminado es rápido, quizá pueda costearse este cálculo de lujo. En el resto del libro se mantienen los valores predeterminados salvo razones especiales.
+
+### Fallos
+
+Cualquier procedimiento estadístico puede fallar. En métodos sencillos y establecidos conocemos mejor los modos y señales de fallo; en uno complejo como INLA hay más posibilidades y el diagnóstico es más difícil.
+
+La forma más benigna es un error sintáctico. Como sucede a veces en R, el mensaje puede informar la dificultad inmediata y no su causa. Conviene buscar en internet palabras clave del mensaje, revisar la ayuda, las preguntas frecuentes y el archivo de la lista de correo de INLA.
+
+Un nivel posterior aparece cuando las instrucciones son sintácticamente correctas, pero el programa termina con error. Añadir `verbose = TRUE` puede revelar el progreso y sugerir la causa. A veces no hay datos suficientes para estimar el modelo: es difícil estimar una varianza con una sola observación. Debe considerarse si los datos son suficientemente ricos para cada parámetro. Una previa más informativa puede permitir el ajuste; si los datos son insuficientes, hacen falta supuestos más fuertes.
+
+Simplificar es una estrategia útil de depuración. Retire covariables o efectos aleatorios para identificar el componente problemático. Con datos enormes pruebe una submuestra. En general, comience con un conjunto o modelo pequeño para estimar cuánto tardará el problema completo y saber si necesita un equipo mayor.
+
+El fallo más insidioso ocurre cuando INLA devuelve sin queja una respuesta incorrecta. Su metodología requiere que la condicional completa del campo latente sea «casi» gaussiana, condición que suele lograrse con réplicas o con el préstamo de información y suavizado de las previas GMRF. Consideremos un ejemplo que no la cumple:
+
+$$
+y_i\sim\operatorname{Bernoulli}(p_i),\qquad
+p_i=\frac{e^{\eta_i}}{1+e^{\eta_i}},\qquad
+\eta_i\sim N(\mu,\sigma^2),
+$$
+
+con $\mu=\sigma^2=1$. Simulamos:
+
+```{r}
+set.seed(1)
+n <- 100
+u <- rnorm(n)
+eta <- 1 + u
+p <- exp(eta)/(1 + exp(eta))
+y <- rbinom(n, size = 1, prob = p)
+```
+
+Cada observación binaria posee un efecto aleatorio gaussiano independiente. No hay suavizado, préstamo de información ni réplicas, por lo que la condicional de $\eta_i$ no es casi gaussiana. INLA tiende a subestimar $\sigma^2$:
+
+```{r}
+datos <- data.frame(y = y, x = 1:n)
+result <- inla(
+  y ~ 1 + f(x, model = "iid"), data = datos,
+  family = "binomial", Ntrials = 1
+)
+```
+
+En el resultado original, la media posterior de $\sigma$ es 0.012, muy inferior al valor verdadero 1, aunque la media $\mu$ se estima razonablemente cerca de 1. Las condiciones asintóticas que justifican Laplace no se cumplen: los efectos independientes hacen que el número efectivo de parámetros sea del orden del número de datos, y la verosimilitud aporta poca información. Para una sola observación $y_i=1$, la log-verosimilitud aumenta con $\eta_i$ y se vuelve muy plana en valores grandes, lo que dificulta la inferencia [@ferkingstad2015].
+
+En una simulación conocemos la verdad; en una aplicación real no. Podemos adoptar varias precauciones:
+
+- Cuando sea posible, calcule la MLE mediante otro comando o paquete de R y compárela con la moda posterior de INLA. Con previas planas, MAP y MLE deberían ser semejantes. Con previas informativas es natural una diferencia. La comparación valida el cálculo; la inferencia seguirá siendo bayesiana.
+- Reimplemente el modelo mediante BUGS, JAGS o STAN cuando los resultados sean suficientemente importantes. Exige más programación y tiempo, pero puede ser el precio de asegurar la validez. El consejo también funciona al revés: compruebe con INLA un análisis iniciado mediante MCMC.
+- Simule datos del modelo con parámetros conocidos y compruebe si INLA los recupera. Quizá deba simplificar el modelo o reducir los datos para repetir el experimento. La simulación aumenta la confianza, aunque no es infalible y conserva variabilidad muestral.
+- Examine exhaustivamente los diagnósticos. Los datos pueden proceder de un modelo distinto al ajustado; entonces INLA no «falla», pero las conclusiones serán engañosas. Los diagnósticos bayesianos están menos desarrollados que sus equivalentes frecuentistas, pero deben utilizarse todos los medios disponibles.
+
+Este apartado no pretende desalentar el uso de INLA. Las mismas precauciones se aplican a cualquier procedimiento estadístico complejo: son el precio que debe pagarse.
+
+## Extensiones
+
+### Aproximación de la verosimilitud marginal
+
+La verosimilitud marginal $p(\mathbf y)$ es útil para comparar modelos. Los factores de Bayes son cocientes de verosimilitudes marginales, y el DIC también está relacionado con ella. A partir de (2.4), una aproximación intuitiva es
+
+$$
+\widetilde p(\mathbf y)=
+\int
+\left.
+\frac{\pi(\boldsymbol\eta,\boldsymbol\theta,\mathbf y)}
+{\widetilde\pi_G(\boldsymbol\eta\mid\boldsymbol\theta,\mathbf y)}
+\right|_{\boldsymbol\eta=\boldsymbol\eta^*(\boldsymbol\theta)}
+d\boldsymbol\theta.
+$$
+
+Es la constante normalizadora de $\widetilde\pi(\boldsymbol\theta\mid\mathbf y)$ y admite desviaciones de la gaussianidad al tratar esta densidad de manera no paramétrica. Puede fallar si la posterior de los hiperparámetros es multimodal; el problema afecta al enfoque INLA en general. Por fortuna, los LGM casi siempre generan posteriores unimodales.
+
+### Selección de modelos
+
+INLA ofrece DIC y WAIC. Para DIC se necesita la esperanza posterior de la devianza y su evaluación en una ubicación posterior. INLA evalúa en la media posterior de $\boldsymbol\eta$ y la moda posterior de $\boldsymbol\theta$, no en la media de todos los parámetros, porque las marginales de los hiperparámetros pueden ser muy sesgadas y su media representar mal la ubicación. WAIC se calcula de manera semejante.
+
+```{r}
+result <- inla(
+  ...,
+  control.compute = list(dic = TRUE, waic = TRUE)
+)
+```
+
+Los resultados quedan disponibles en `result$dic` y `result$waic`.
+
+### Comprobación del modelo
+
+INLA proporciona dos medidas predictivas de dejar uno fuera: CPO y PIT. Ambas se basan en $p(y_i\mid\mathbf y_{-i})$. En vez de ajustar $n$ veces, se aprovechan las relaciones
+
+$$
+\pi(\eta_i\mid\mathbf y_{-i},\boldsymbol\theta)
+\propto \frac{\pi(\eta_i\mid\mathbf y,\boldsymbol\theta)}
+{\pi(y_i\mid\eta_i,\boldsymbol\theta)},
+$$
+
+$$
+\pi(\boldsymbol\theta\mid\mathbf y_{-i})
+\propto \frac{\pi(\boldsymbol\theta\mid\mathbf y)}
+{p(y_i\mid\mathbf y_{-i},\boldsymbol\theta)},
+$$
+
+y solo se requiere una integral unidimensional para la predictiva. Se activa mediante:
+
+```{r}
+result <- inla(..., control.compute = list(cpo = TRUE))
+```
+
+CPO y PIT se encuentran en `result$cpo$cpo` y `result$cpo$pit`. Para mejorar la cuadrícula puede usarse `int.strategy = "grid"`; cuando importan las colas conviene `strategy = "laplace"` y aumentar `npoints`, por ejemplo a 21.
+
+El objeto `result$cpo$failure` señala observaciones donde se incumplieron supuestos internos. Valores mayores que cero indican un problema; cuanto más cerca de uno, más grave. `inla.cpo(result)` vuelve a calcular eficientemente las medidas problemáticas, retirando la observación, ajustando y prediciéndola.
+
+Conviene verificar siempre las CPO o PIT excepcionalmente pequeñas, aunque no hayan activado una alarma. La validación depende de las colas y estas son difíciles de aproximar. Antes de declarar un caso atípico, fuerce su reevaluación mediante `inla.cpo()`.
+
+### Combinaciones lineales del campo latente
+
+Puede interesarnos no solo cada marginal, sino combinaciones lineales $\mathbf v=\mathbf A\boldsymbol\eta$, donde $\mathbf A$ es de $k\times n$. Las funciones `inla.make.lincomb()` e `inla.make.lincombs()` definen una o varias combinaciones, que se pasan al argumento `lincomb` de `inla()`.
+
+INLA ofrece dos enfoques. El primero amplía el campo a $(\boldsymbol\eta,\mathbf v)$ y ajusta el modelo con las aproximaciones ya descritas. Proporciona marginales de cada combinación, pero muchas combinaciones densifican la precisión y ralentizan el cálculo:
+
+```{r}
+inla(..., control.inla = list(lincomb.derived.only = FALSE))
+```
+
+El segundo, predeterminado, realiza un posprocesamiento. Condicionado a hiperparámetros y datos, aproxima $\mathbf v$ por una gaussiana con media $\mathbf A\boldsymbol\mu$ y covarianza $\mathbf A\mathbf Q^{-1}\mathbf A^T$, y después integra la incertidumbre en $\boldsymbol\theta$. No amplía el campo y es mucho más rápido, aunque el primer enfoque puede ser más preciso.
+
+Con el método rápido puede calcularse también la matriz de correlaciones posteriores entre combinaciones:
+
+```{r}
+inla(
+  ...,
+  control.inla = list(lincomb.derived.correlation.matrix = TRUE)
+)
+```
+
+La matriz puede usarse, por ejemplo, para construir una cópula gaussiana que aproxime la densidad conjunta de componentes del campo latente.

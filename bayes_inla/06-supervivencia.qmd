@@ -1,0 +1,314 @@
+# Análisis de supervivencia
+
+El análisis de supervivencia estudia datos cuya respuesta es el tiempo hasta un suceso de interés. Se aplica a muerte, aparición de enfermedades, fallos de equipos, terminación de empleos, jubilación, matrimonio y muchos otros eventos. Puede interesar caracterizar la distribución del tiempo, comparar grupos o relacionarlo con covariables.
+
+Los datos suelen recogerse durante un periodo finito. Algunos sujetos no alcanzan el desenlace y solo sabemos que su supervivencia excede el tiempo observado: su respuesta está censurada. Desde @cox1972, el modelo de riesgos proporcionales de Cox es la opción predeterminada. Describe el riesgo mediante una función basal no especificada y efectos lineales de covariables. El análisis tradicional usa verosimilitud parcial; Bayes utiliza la verosimilitud completa para estimar todos los elementos.
+
+## Introducción
+
+Sea $T>0$ un tiempo continuo. Su función de distribución es $F(t)=P(T\leq t)$ y la función de supervivencia
+
+$$
+S(t)=1-F(t)=P(T>t).
+$$
+
+$S(t)$ es no creciente, $S(0)=1$ y, para un tiempo propio, $S(\infty)=0$. Su densidad es $f(t)=-S'(t)$. La función de riesgo instantáneo es
+
+$$
+h(t)=\lim_{\Delta t\to0}
+\frac{P(t\leq T<t+\Delta t\mid T\geq t)}{\Delta t}
+=\frac{f(t)}{S(t)}=-\frac{d}{dt}\log S(t).
+$$
+
+El riesgo acumulado
+
+$$
+H(t)=\int_0^t h(u)\,du=-\log S(t)
+$$
+
+implica $S(t)=\exp\{-H(t)\}$.
+
+Para $n$ sujetos observamos $(t_i,\delta_i,\mathbf x_i)$, donde $\delta_i=1$ señala el evento y $δ_i=0$ censura derecha. El modelo de Cox es
+
+$$
+h(t\mid\mathbf x)=h_0(t)
+\exp(\beta_1x_1+\cdots+\beta_px_p). \qquad\text{(6.1)}
+$$
+
+El cociente de riesgos de dos sujetos no depende del tiempo, de donde proviene el nombre «riesgos proporcionales». Diferentes supuestos sobre $h_0(t)$ producen distintos modelos.
+
+## Modelos semiparamétricos
+
+### Riesgo basal constante por tramos
+
+Una construcción bayesiana conveniente divide el eje temporal mediante $0=s_0<s_1<\cdots<s_K$ y supone
+
+$$
+h_0(t)=\lambda_k,\qquad t\in(s_{k-1},s_k].
+$$
+
+Para el sujeto $i$ en el intervalo $k$,
+
+$$
+h(t_i)=\exp\{\log\lambda_k+\mathbf x_i^T\boldsymbol\beta\}.
+$$
+
+Su contribución a la log-verosimilitud puede reescribirse como la suma de $k$ contribuciones Poisson: ceros en los intervalos atravesados y $delta_i$ en el último, con exposiciones iguales a las longitudes recorridas. Esta ampliación de datos convierte el modelo en un LGM apto para INLA.
+
+#### Ejemplo ACTG 320
+
+El ensayo ACTG 320 incluyó 1151 personas con VIH. Comparó un régimen de tres fármacos con Indinavir (`tx=1`) frente a dos fármacos, y registró tiempo hasta diagnóstico definitorio de sida o muerte, edad, sexo, CD4 basal y meses previos de zidovudina.
+
+La referencia frecuentista es:
+
+```{r}
+data(ACTG320, package = "brinla")
+library(survival)
+ACTG320.coxph <- coxph(
+  Surv(time, censor) ~ tx + age + sex + priorzdv,
+  data = ACTG320
+)
+```
+
+INLA crea la respuesta con `inla.surv()` y asigna una caminata aleatoria de primer orden a los log-riesgos basales de 20 intervalos:
+
+```{r}
+ACTG320.formula <- inla.surv(time, censor) ~
+  tx + age + sex + priorzdv
+ACTG320.inla1 <- inla(
+  ACTG320.formula, family = "coxph", data = ACTG320,
+  control.hazard = list(model = "rw1", n.intervals = 20),
+  control.compute = list(dic = TRUE)
+)
+```
+
+La media posterior del tratamiento es -0.6879, con intervalo $(-1.1181,-0.2730)$. El cociente de riesgos es $e^{-0.6879}=0.5026$, con intervalo $(0.3269,0.7611)$: manteniendo las demás covariables, el régimen triple reduce aproximadamente a la mitad la tasa de progresión o muerte. Sexo y zidovudina previa no son importantes. Edad queda en el límite, con intervalo $(-0.0006,0.0426)$. El intercepto aparece porque INLA estima el riesgo basal, a diferencia de la verosimilitud parcial.
+
+### Riesgos proporcionales estratificados
+
+Si una covariable viola proporcionalidad, puede estratificarse. Cada uno de $S$ grupos tiene su propio riesgo basal $h_{0j}(t)$, pero comparte $\boldsymbol\beta$. Se asignan RW1 con precisión común a los log-riesgos de cada estrato.
+
+En ACTG 320 creamos cuartiles de CD4:
+
+```{r}
+ACTG320$cd4group <- as.numeric(cut(
+  ACTG320$cd4,
+  breaks = c(-Inf, quantile(ACTG320$cd4, c(.25, .5, .75)), Inf),
+  labels = 1:4
+))
+ACTG320.inla2 <- inla(
+  ACTG320.formula, family = "coxph", data = ACTG320,
+  control.hazard = list(
+    model = "rw1", n.intervals = 20,
+    strata.name = "cd4group"
+  ),
+  control.compute = list(dic = TRUE)
+)
+```
+
+Los riesgos basales difieren marcadamente: decrecen en los dos grupos de CD4 bajo y aumentan en los dos superiores. DIC baja de 1316.253 a 1274.168, respaldando la estratificación. El efecto de tratamiento permanece cercano, -0.6625.
+
+## Modelos de tiempo de fallo acelerado
+
+Los modelos paramétricos considerados poseen representación de tiempo acelerado (AFT):
+
+$$
+S(t\mid\mathbf x)=S_0\{t\exp(\mathbf x^T\boldsymbol\beta)\}. \qquad\text{(6.3)}
+$$
+
+$\exp(\mathbf x^T\boldsymbol\beta)$ es el factor de aceleración. Equivalentemente,
+
+$$
+\log T=\gamma_0+\gamma_1x_1+\cdots+\gamma_px_p+\sigma\varepsilon, \qquad\text{(6.4)}
+$$
+
+con $\gamma_j=-\beta_j$. Una exponencial o Weibull corresponde a error de valor extremo; log-normal a error normal y log-logística a error logístico.
+
+Para Weibull,
+
+$$
+S(t\mid\alpha,\lambda)=e^{-\lambda t^\alpha},\quad
+f(t)=\alpha\lambda t^{\alpha-1}e^{-\lambda t^\alpha},\quad
+h(t)=\alpha\lambda t^{\alpha-1}.
+$$
+
+$\alpha=1$ produce exponencial. Weibull tiene representaciones AFT y de riesgos proporcionales. INLA admite `exponentialsurv`, `weibullsurv`, `lognormalsurv` y `loglogistic`.
+
+### Ejemplo: cáncer de laringe
+
+Los datos incluyen 90 hombres diagnosticados entre 1970 y 1978, con tiempo hasta muerte o fin del estudio, etapa clínica, edad y año de diagnóstico. Ajustamos Weibull:
+
+```{r}
+data(larynx, package = "brinla")
+formula <- inla.surv(time, delta) ~ factor(stage) + age
+larynx.inla1 <- inla(
+  formula, family = "weibullsurv", data = larynx,
+  control.compute = list(dic = TRUE)
+)
+```
+
+`survreg()` informa coeficientes $\gamma$ de log-tiempo; INLA informa los coeficientes de riesgo $\beta=-\gamma/\sigma$, por lo que los signos son opuestos. En INLA, un valor positivo indica peor supervivencia.
+
+La etapa 4 tiene media 1.7059 e intervalo $(0.8896,2.4983)$ respecto de la etapa 1. El factor $e^{1.7059}=5.5063$ indica que la mediana de supervivencia de etapa 1 es aproximadamente 5.5 veces la de etapa 4, con intervalo de factores $(2.434,12.162)$. Edad y etapas 2–3 no excluyen cero al 95 %.
+
+## Diagnóstico del modelo
+
+Los residuos de Cox--Snell bayesianos son
+
+$$
+r_{Ci}=H_i(t_i,\boldsymbol\theta\mid\mathbf x_i)
+=-\log S(t_i,\boldsymbol\theta\mid\mathbf x_i). \qquad\text{(6.8)}
+$$
+
+Se obtiene su posterior sustituyendo muestras de parámetros o, aproximadamente, sus medias. Si el modelo es adecuado, se comportan como una muestra censurada exponencial unitaria. El estimador Nelson--Aalen de su riesgo acumulado debe seguir una recta de pendiente uno al graficarlo contra $r_C$.
+
+Comparamos Weibull, exponencial y Cox:
+
+```{r}
+larynx.inla2 <- inla(
+  formula, family = "exponentialsurv", data = larynx,
+  control.compute = list(dic = TRUE)
+)
+larynx.inla3 <- inla(
+  formula, family = "coxph", data = larynx,
+  control.hazard = list(model = "rw1", n.intervals = 20),
+  control.compute = list(dic = TRUE)
+)
+r1 <- bri.surv.resid(larynx.inla1, larynx$time, larynx$delta)
+r2 <- bri.surv.resid(larynx.inla2, larynx$time, larynx$delta)
+r3 <- bri.surv.resid(larynx.inla3, larynx$time, larynx$delta)
+```
+
+Los tres ajustes son aceptables; el exponencial sigue mejor la diagonal, mientras Weibull queda algo por encima salvo en la cola.
+
+Los residuos de martingala son
+
+$$
+r_{Mi}=\delta_i-r_{Ci},
+$$
+
+y comparan el evento observado con el número esperado. Son asimétricos, acotados por 1 y sin cota inferior. Los residuos de devianza
+
+$$
+r_{Di}=\operatorname{sgn}(r_{Mi})
+\left[-2\{r_{Mi}+\delta_i\log(\delta_i-r_{Mi})\}\right]^{1/2}
+$$
+
+son más aproximadamente normales. Las gráficas contra edad no muestran patrón en ninguno de los tres modelos.
+
+Los residuos de martingala también ayudan a decidir la forma funcional de una covariable. Se ajusta el modelo sin ella, se grafican residuos contra la covariable y se superpone una curva suave. En `larynx`, curvas RW2 contra `diagyr` son aproximadamente lineales, por lo que basta incluir el año de diagnóstico sin transformación.
+
+## Datos censurados por intervalo
+
+Con censura por intervalo solo sabemos $T\in[t^{(1)},t^{(2)}]$. Con truncamiento izquierdo, el sujeto entra al conjunto de riesgo después de un tiempo conocido. Una observación general incluye límites, truncamiento, indicador y covariables. Los AFT con previas gaussianas siguen siendo LGM y pueden ajustarse con INLA. El truco Poisson del Cox por tramos no se extiende a censura por intervalo, por lo que INLA no maneja esa combinación semiparamétrica.
+
+### Ejemplo: emergencia dental
+
+El estudio belga Signal Tandmobiel siguió 4386 escolares. Analizamos la edad de emergencia del primer premolar superior izquierdo, medida desde los 5 años. `LEFT` y `RIGHT` delimitan el intervalo; `RIGHT=999` indica censura derecha. `SEX` distingue niña y niño; `DMF` señala si el diente temporal predecesor estaba cariado, perdido o empastado.
+
+```{r}
+data(tooth24, package = "brinla")
+tooth24$cens <- with(tooth24, ifelse(RIGHT == 999, 0, 3))
+tooth24.formula <- inla.surv(LEFT, cens, RIGHT) ~ SEX + DMF
+tooth24.inla <- inla(
+  tooth24.formula, family = "loglogistic", data = tooth24
+)
+```
+
+Las medias posteriores son 1.7732 para intercepto, -0.0726 para niña y -0.0903 para DMF, con ambos intervalos completamente negativos. Los resultados casi coinciden con `survreg(..., dist="loglogistic")`. Para niñas, $e^{-0.0726}=0.930$: la mediana del tiempo desde los cinco años hasta la emergencia es 0.93 veces la de niños con igual DMF.
+
+INLA informa la forma log-logística $\alpha=7.023$, mientras `survreg` informa $s=1/\alpha=0.1365$. La log-logística es el único AFT de los considerados que posee forma de *odds* proporcionales. El cociente de *odds* de fallo para niñas es aproximadamente 1.67: a un tiempo dado, sus *odds* de que el diente ya haya emergido son 1.67 veces los de niños.
+
+## Modelos de fragilidad
+
+La fragilidad introduce un efecto aleatorio multiplicativo sobre el riesgo para representar heterogeneidad no observada y asociación dentro de grupos. Para el individuo $k$ del grupo $i$, un Weibull con fragilidad puede escribirse
+
+$$
+t_{ik}\mid\lambda_{ik}\sim\operatorname{Weibull}(\alpha,\lambda_{ik}),
+\qquad
+\log\lambda_{ik}=\mathbf x_{ik}^T\boldsymbol\beta+b_i,
+$$
+
+de modo que
+
+$$
+h(t_{ik})=\alpha t_{ik}^{\alpha-1}
+\exp(\mathbf x_{ik}^T\boldsymbol\beta+b_i). \qquad\text{(6.10)}
+$$
+
+Con $b_i\sim N(0,\tau_b^{-1})$ y previas gaussianas y gamma, es un LGM.
+
+### Ejemplo: infecciones renales
+
+Los datos contienen tiempos hasta primera y segunda infección del catéter en 38 pacientes de diálisis; 24 % están censurados. Dos tiempos del mismo paciente comparten fragilidad. Predictores: edad, sexo y enfermedad.
+
+```{r}
+data(kidney, package = "survival")
+formula <- inla.surv(time, status) ~ age + sex + disease +
+  f(id, model = "iid",
+    hyper = list(prec = list(param = c(.1, .1))))
+kidney.inla <- inla(
+  formula, family = "weibullsurv", data = kidney
+)
+kidney.hp <- inla.hyperpar(kidney.inla)
+bri.hyperpar.summary(kidney.hp)
+```
+
+Solo sexo tiene intervalo completamente distinto de cero: las mujeres presentan menor riesgo de infección. La forma Weibull refinada tiene media 1.163. La desviación de fragilidad tiene media 0.659, intervalo $(0.272,1.167)$ y posterior sesgada a la derecha; coincide razonablemente con la estimación frecuentista 0.628.
+
+## Modelado conjunto longitudinal y de tiempo al evento
+
+Muchos estudios clínicos miden repetidamente un biomarcador y registran tiempo hasta muerte o enfermedad. Modelarlos por separado es inapropiado cuando el proceso longitudinal se relaciona con supervivencia. Un modelo conjunto los conecta mediante efectos gaussianos latentes compartidos.
+
+Para el sujeto $i$, el submodelo longitudinal es
+
+$$
+y_{ij}\mid\eta_{ij},\sigma^2\sim N(\eta_{ij},\sigma^2),qquad
+\eta_{ij}=\mathbf x_{1ij}^T\boldsymbol\beta_1+W_{1i}(s_{ij}). \qquad\text{(6.11)}
+$$
+
+El submodelo de supervivencia, por ejemplo Weibull, usa
+
+$$
+\log\lambda_i(t)=\mathbf x_{2i}(t)^T\boldsymbol\beta_2+W_{2i}(t). \qquad\text{(6.12)}
+$$
+
+Una construcción flexible es
+
+$$
+W_{1i}(s)=U_{1i}+U_{2i}s,
+$$
+
+$$
+W_{2i}(t)=\gamma_1U_{1i}+\gamma_2U_{2i}
++\gamma_3\{U_{1i}+U_{2i}t\}+U_{3i}. \qquad\text{(6.14)}
+$$
+
+$\gamma_1,\gamma_2,\gamma_3$ miden asociaciones inducidas por intercepto, pendiente y valor longitudinal en el evento. Con normales bivariantes para $(U_1,U_2)$, fragilidad normal y previas estándar, todo es un campo gaussiano latente.
+
+### Ejemplo: ensayo clínico de sida
+
+El estudio siguió 467 pacientes asignados a didanosina o zalcitabina. Registró raíz de CD4 al inicio y a 2, 6, 12 y 18 meses, y tiempo hasta muerte. También sexo, infección oportunista previa (`PREVOI`) y fracaso o intolerancia a AZT.
+
+El submodelo longitudinal incluye tiempo, tratamiento por tiempo, sexo, PREVOI, estrato e intercepto y pendiente individuales. El submodelo de supervivencia exponencial incluye tratamiento, sexo, PREVOI y estrato. El modelo seleccionado enlaza ambos mediante $W_{2i}=\gamma_1U_{1i}+\gamma_2U_{2i}$.
+
+INLA permite distintas verosimilitudes por observación. Se apilan una respuesta gaussiana y otra `inla.surv`, rellenando con `NA` donde una fila pertenece a la otra respuesta; se preparan covariables separadas y efectos compartidos mediante `iid2d` y `copy`:
+
+```{r}
+data(joint, package = "brinla")
+longdat <- joint$longitudinal
+survdat <- joint$survival
+n1 <- nrow(longdat); n2 <- nrow(survdat)
+
+y.long <- c(longdat$y, rep(NA, n2))
+y.surv <- inla.surv(
+  c(rep(NA, n1), survdat$SURVTIME),
+  c(rep(NA, n1), survdat$CENSOR)
+)
+Yjoint <- list(y.long, y.surv)
+```
+
+La llamada final usa `family=c("gaussian","exponentialsurv")`, efectos `U11/U21` como `iid2d` y copias `U12/U22` en supervivencia. El código fuente conserva la preparación completa de índices y covariables en la edición original; la idea crucial es compartir los mismos efectos con coeficientes de copia estimables.
+
+En el submodelo longitudinal, CD4 disminuye con el tiempo: media -0.2653 e intervalo $(-0.3612,-0.1699)$. PREVOI también reduce CD4, -2.3492 con intervalo $(-2.8230,-1.8758)$. En supervivencia, solo PREVOI tiene un intervalo completamente distinto de cero. Los coeficientes de asociación son -0.1933 y -1.6047, ambos claramente negativos: la supervivencia está vinculada tanto al nivel inicial de CD4 como a su velocidad de descenso. Clínicamente es razonable: CD4 alto refleja mejor salud y un descenso rápido anticipa peor supervivencia.
+

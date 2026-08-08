@@ -1,0 +1,12 @@
+# Presentación {.unnumbered}
+
+Esta es una traducción al español de *Bayesian Regression Modeling with INLA*, de Xiaofeng Wang, Yu Ryan Yue y Julian J. Faraway, publicado por CRC Press en 2018.
+
+La traducción busca conservar la redacción, la estructura matemática y el código R de la obra original. Los nombres de funciones, objetos y argumentos permanecen en inglés para que los ejemplos puedan copiarse y ejecutarse. Se han corregido únicamente errores inequívocos introducidos por el reconocimiento óptico de caracteres; los posibles errores presentes en el original se señalan mediante notas editoriales.
+
+Esta primera entrega comprende el prefacio y el capítulo 1. El documento fuente está preparado como libro Quarto para producir HTML y PDF a partir de los mismos archivos.
+
+::: {.callout-note title="Nota sobre derechos"}
+Esta traducción se preparó a partir de los archivos proporcionados por el usuario. No sustituye la edición original y debe utilizarse respetando los derechos de autor y las condiciones de la editorial.
+:::
+

@@ -1,0 +1,18 @@
+# Prefacio {.unnumbered}
+
+INLA son las siglas de *Integrated Nested Laplace Approximations* (aproximaciones de Laplace anidadas integradas). Es un método para ajustar una amplia clase de modelos bayesianos. Históricamente, era difícil ajustar cualquier modelo bayesiano que no fuese de los más sencillos. Durante los últimos veinte años se ha desarrollado una clase de métodos computacionales bayesianos basados en una técnica de simulación denominada Monte Carlo mediante cadenas de Markov (MCMC), que ha alcanzado una amplia aceptación en estadística. Entre los paquetes populares que emplean estos métodos se encuentran BUGS, JAGS y STAN. A pesar de las impresionantes mejoras, estos paquetes padecen dos problemas. En primer lugar, son lentos. Para algunos problemas de datos más complejos o de mayor tamaño, MCMC puede resultar inviablemente lento, incluso si se está dispuesto a esperar días. Pero aun en problemas más modestos, la capacidad de ajustar modelos con rapidez es crucial para el análisis exploratorio de datos. INLA es un método de aproximación. Por lo general, sus aproximaciones son más que adecuadas; recuérdese además que los métodos de simulación también son inevitablemente aproximados si han de terminar en un tiempo finito. INLA no tarda más que unos cuantos segundos en ajustar los modelos que aparecen en este libro.
+
+La otra dificultad práctica de los métodos MCMC es que exigen una experiencia considerable. Es necesario aprender un lenguaje de programación especializado para especificar los modelos. También hay que comprender los diagnósticos que determinan si el modelo se ajustó correctamente o si el proceso de simulación falló. Para utilizarlos con éxito hace falta cierta destreza. A pesar de las mejoras continuas en este ámbito, esto ha sido un obstáculo para una adopción más amplia de estos métodos en la comunidad científica.
+
+INLA también tiene algunas desventajas. Aunque no es necesario aprender un lenguaje de programación específico, pues los modelos pueden especificarse y analizarse con R, su uso tampoco es del todo sencillo. De hecho, esa es la razón por la que conviene leer este libro. Además, INLA solo se aplica a una clase denominada modelos gaussianos latentes. Un vistazo al índice mostrará que esta clase es muy amplia. No obstante, habrá modelos que no puedan ajustarse con INLA pero sí mediante MCMC.
+
+Hacemos algunas suposiciones acerca de usted, quien lee. Esperamos que posea conocimientos básicos de teoría y práctica estadística, y que ya sepa algo de metodología bayesiana. Este no es un libro teórico: centramos la exposición en ejemplos. Esperamos que el libro resulte accesible para científicos que ya utilicen algo de estadística. También suponemos cierto conocimiento de R. Proporcionamos código completamente funcional para todos los ejemplos, por lo que quizá pueda adaptarlo a sus necesidades aun sin dominar R. Con todo, hará falta alguna experiencia con R para aprovechar plenamente el material. Si necesita contenidos más introductorios, le remitimos a textos más amplios y accesibles.
+
+Este libro trata sobre modelos de regresión y no presenta las extensas capacidades de INLA para el análisis de datos espaciales. A quienes se interesen específicamente por datos espaciales les recomendamos @blangiardo2015.
+
+Hemos reunido los datos y las funciones adicionales empleadas en el texto en un paquete de R que, al momento de publicarse la obra, podía encontrarse en:
+
+<https://github.com/julianfaraway/brinla>
+
+Nuestro primer agradecimiento es para Håvard Rue y sus colaboradores por desarrollar la teoría y producir el software de INLA. Agradecemos también a Finn Lindgren, Daniel Simpson y Egil Ferkingstad sus valiosos consejos.
+

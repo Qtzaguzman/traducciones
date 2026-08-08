@@ -1,0 +1,250 @@
+# Temas diversos en INLA
+
+Este capítulo reúne extensiones sobre *splines*, datos funcionales, valores extremos y estimación de densidades.
+
+## *Splines* como modelos mixtos
+
+En la regresión no paramétrica
+
+$$Y_i=f(x_i)+\varepsilon_i,\qquad \varepsilon_i\sim N(0,\sigma_\varepsilon^2),$$
+
+la función suave puede representarse como un modelo lineal mixto.
+
+### Bases de potencia truncada
+
+Los *splines* de base de potencia truncada (TPB) usan nudos en cuantiles de $x$. Si $a_+^p=a^p$ para $a>0$ y cero en otro caso,
+
+$$
+f(x_i)=\beta_0+\beta_1x_i+\cdots+\beta_px_i^p+
+\sum_{j=1}^ru_j(x_i-t_j)_+^p.
+$$
+
+Con matrices $\mathbf X$ para el polinomio y $\mathbf Z$ para las bases truncadas,
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\mathbf Z\mathbf u+\boldsymbol\varepsilon,
+\quad \mathbf u\sim N(\mathbf0,\sigma_u^2\mathbf I),
+\quad \boldsymbol\varepsilon\sim N(\mathbf0,\sigma_\varepsilon^2\mathbf I). \tag{11.1}
+$$
+
+El cociente $\lambda=\sigma_\varepsilon^2/\sigma_u^2$ controla la suavidad. En un análisis frecuentista se emplean BLUP y REML; en el bayesiano se asignan priors gaussianos difusos a $\boldsymbol\beta$ y priors débiles a las varianzas. Una regla usual toma $r=\min(n_x/4,35)$, donde $n_x$ es el número de valores distintos, aunque suelen bastar entre 5 y 20 nudos.
+
+### *Splines* de O’Sullivan
+
+Los O-splines combinan bases B-spline cúbicas con la penalización del *spline* de suavizado:
+
+$$
+\int\{f''(x)\}^2dx=\boldsymbol\beta^\mathsf T\boldsymbol\Omega\boldsymbol\beta,
+$$
+
+y minimizan
+
+$$
+(\mathbf y-\mathbf B\boldsymbol\beta)^\mathsf T
+(\mathbf y-\mathbf B\boldsymbol\beta)+
+\lambda\boldsymbol\beta^\mathsf T\boldsymbol\Omega\boldsymbol\beta. \tag{11.2}
+$$
+
+Una descomposición espectral de $\boldsymbol\Omega$ separa partes fijas y aleatorias y produce de nuevo el modelo mixto (11.1). Con nudos equiespaciados, los P-splines cúbicos sustituyen $\boldsymbol\Omega$ por $\mathbf D_2^\mathsf T\mathbf D_2$; las tres familias están por tanto estrechamente relacionadas.
+
+### Ingresos de trabajadores canadienses
+
+Los datos contienen 205 pares de edad y logaritmo del ingreso anual. Para TPB cuadrático, `spline.mixed()` genera las matrices del modelo:
+
+```{r}
+library(INLA)
+library(brinla)
+data(age.income, package = "SemiPar")
+
+X <- spline.mixed(age.income$age, degree = 2, type = "TPB")$X
+Z <- spline.mixed(age.income$age, degree = 2, type = "TPB")$Z
+age.income$ID <- seq_len(nrow(age.income))
+
+formula <- log.income ~ -1 + X +
+  f(ID, model = "z", Z = Z,
+    hyper = list(prec = list(param = c(1e-6, 1e-6))))
+result.tpb <- inla(formula, data = age.income,
+                   control.predictor = list(compute = TRUE))
+```
+
+Se excluye el intercepto porque ya está en $\mathbf X$. La curva y sus bandas aparecen en `summary.fitted.values`; los coeficientes fijos y aleatorios se conservan por separado.
+
+El O-spline se ajusta con el mismo código cambiando `type = "OSS"`. En este ejemplo es un poco menos suave aun con los mismos nudos y priors. También puede expresarse directamente como
+
+$$
+\mathbf y\mid\boldsymbol\beta,\sigma_\varepsilon^2
+\sim N(\mathbf B\boldsymbol\beta,\sigma_\varepsilon^2\mathbf I),
+\qquad
+\boldsymbol\beta\mid\sigma_\beta^2
+\sim N(\mathbf0,\sigma_\beta^2\boldsymbol\Omega^{-}). \tag{11.3}
+$$
+
+```{r}
+B.tmp <- spline.mixed(age.income$age, type = "OSS")$B
+Bmat <- as(B.tmp, "sparseMatrix")
+Q <- as(spline.mixed(age.income$age, type = "OSS")$Q, "sparseMatrix")
+data.inla <- list(y = age.income$log.income, x = 1:ncol(Bmat))
+formula <- y ~ -1 +
+  f(x, model = "generic0", Cmatrix = Q,
+    hyper = list(prec = list(param = c(1e-6, 1e-6))))
+result.oss <- inla(formula, data = data.inla,
+                   control.predictor = list(A = Bmat, compute = TRUE))
+```
+
+Las formulaciones directa y mixta suavizan coeficientes distintos y pueden producir pequeñas diferencias pese a compartir priors nominales. La misma construcción se extiende a respuestas no gaussianas cambiando `family`.
+
+## Análisis de varianza para datos funcionales
+
+Los datos funcionales son curvas o superficies, tratadas como realizaciones completas y no como simples secuencias de puntos. Un ANOVA funcional de una vía es
+
+$$
+Y_{ik}(x)=\mu(x)+\alpha_i(x)+\varepsilon_{ik}(x), \tag{11.4}
+$$
+
+donde $\mu$ es la media global y $\alpha_i$ el efecto del nivel $i$. Se requiere una restricción como $\sum_i\alpha_i(x)=0$ o fijar un nivel de referencia.
+
+Con dos factores y una respuesta de familia exponencial,
+
+$$
+g(\mu_{ijk}(x))=\mu(x)+\alpha_i(x)+\beta_j(x)+\gamma_{ij}(x). \tag{11.5}
+$$
+
+Las restricciones apropiadas identifican los efectos principales y la interacción. Priors gaussianos suaves convierten estos modelos en gaussianos latentes; los conjuntos de excursión permiten determinar regiones donde una función efecto difiere simultáneamente de cero.
+
+### Imagen por tensor de difusión
+
+Los datos DTI contienen perfiles de anisotropía fraccional de pacientes con esclerosis múltiple a lo largo del cuerpo calloso y del tracto corticoespinal derecho (RCST). Se seleccionan 18 pacientes con cuatro visitas y se analiza RCST. Las discontinuidades de algunos perfiles reflejan valores ausentes.
+
+Como la respuesta está entre cero y uno, se usa una beta con media $p_{ij}(x)$:
+
+$$
+\operatorname{logit}\{p_{ij}(x)\}=\mu(x)+\alpha_i(x),
+\qquad i=1,2,3,4, \tag{11.6}
+$$
+
+tomando $\alpha_4(x)=0$. Así, $\mu$ es la media de la cuarta visita. Las funciones reciben priors RW2.
+
+```{r}
+data(DTI, package = "refund")
+DTI.sub <- DTI[DTI$Nscans == 4 & DTI$case == 1, ]
+ns <- ncol(DTI.sub$rcst)
+ng <- length(unique(DTI.sub$visit))
+n <- length(unique(DTI.sub$ID))
+
+D1 <- Matrix::Matrix(rep(1, ng * n), ng * n, 1)
+A.mu <- kronecker(D1, Matrix::Diagonal(n = ns))
+D2 <- Matrix::Diagonal(n = ng - 1)
+D3 <- Matrix::Matrix(rep(0, ng - 1), 1, ng - 1)
+D4 <- kronecker(rbind(D2, D3), Matrix::Diagonal(n = ns))
+A.alpha <- kronecker(Matrix::Matrix(rep(1, n), n, 1), D4)
+A <- cbind(A.mu, A.alpha)
+```
+
+Se crean índices para $\mu$, las tres réplicas de $\alpha$ y sus combinaciones lineales:
+
+```{r}
+mu <- 1:ns
+alpha.idx <- rep(1:ns, ng - 1)
+alpha.rep <- rep(1:(ng - 1), each = ns)
+mu2 <- c(mu, rep(NA, length(alpha.idx)))
+alpha2 <- c(rep(NA, length(mu)), alpha.idx)
+alpha2.rep <- c(rep(NA, length(mu)), alpha.rep)
+
+y <- as.vector(t(DTI.sub$rcst))
+data.inla <- list(y = y, mu = mu2, alpha = alpha2,
+                  alpha.rep = alpha2.rep)
+formula <- y ~ -1 +
+  f(mu, model = "rw2", constr = FALSE, scale.model = TRUE) +
+  f(alpha, model = "rw2", constr = FALSE, scale.model = TRUE,
+    replicate = alpha.rep)
+```
+
+`inla.make.lincombs()` construye $\mu+\alpha_i$ para las primeras visitas. El ajuste usa `family = "beta"`, la matriz $A$, `config = TRUE` y esas combinaciones. Los perfiles medios tienen formas semejantes y se desplazan hacia arriba con las visitas; las diferencias respecto de la cuarta visita se aplanan progresivamente.
+
+Para localizar diferencias simultáneamente significativas:
+
+```{r}
+res.exc1 <- excursions.brinla(
+  result, name = "alpha", ind = 1:ns,
+  u = 0, type = "!=", alpha = 0.05, method = "NIQC"
+)
+```
+
+Se repite con los índices de los otros efectos. Las regiones de excursión se reducen a medida que avanza el seguimiento; las tres comparten aproximadamente las posiciones 10 a 40. Esto indica un efecto funcional de visita y sugiere que la parte media del RCST cambia más deprisa que los extremos.
+
+## Valores extremos
+
+Cuando interesa el máximo de muchas variables —por ejemplo, la mayor reclamación o el caudal máximo— se usa la distribución generalizada de valores extremos (GEV):
+
+$$
+F(y\mid\mu,\tau,\xi)=
+\exp\left[-\{1+\xi\sqrt{\tau s}(y-\mu)\}^{-1/\xi}\right],
+$$
+
+definida cuando el término entre llaves es positivo. $\mu$ es localización, $\tau$ precisión, $\xi$ forma y $s$ un factor fijo de escala. El límite $\xi\to0$ es Gumbel; $\xi>0$ produce Fréchet y $\xi<0$ una Weibull invertida con cota superior.
+
+### Caudales máximos del río Calder
+
+Se observan máximos anuales en Cumbria entre 1973 y 2014. Una tendencia lineal en la localización GEV evita la inadecuación de un modelo normal para colas y asimetría:
+
+```{r}
+data(calder, package = "brinla")
+calder$year <- calder$WaterYear - 1973
+imod <- inla(Flow ~ 1 + year, data = calder,
+             family = "gev", scale = 0.1)
+```
+
+El escalamiento lleva la respuesta a unidades pequeñas y facilita la convergencia. La pendiente posterior es aproximadamente 0.76 y $P(\beta_1<0)\approx0.0019$, evidencia fuerte de aumento del caudal máximo.
+
+El máximo observado, 173.17 m³/s en 1997, tiene probabilidad de excedencia estimada 0.0086 y, por tanto, intervalo de recurrencia puntual de unos 116 años. Para 2017, la tendencia reduce ese intervalo a unos 74 años.
+
+Un intervalo creíble requiere la dependencia conjunta entre $\tau$, $\xi$, intercepto y pendiente. Se habilita la configuración posterior y se muestrea conjuntamente:
+
+```{r}
+nsamp <- 999
+imod <- inla(
+  Flow ~ 1 + year, data = calder, family = "gev", scale = 0.1,
+  control.compute = list(config = TRUE),
+  control.inla = list(int.strategy = "grid", dz = 0.2)
+)
+post <- inla.posterior.sample(nsamp, imod)
+```
+
+El muestreo refleja la cuadrícula de integración de hiperparámetros; reducir `dz` de 0.75 a 0.2 la hace más fina, a mayor costo. Transformando cada muestra al intervalo de recurrencia se obtiene una mediana cercana a 70 años y un intervalo creíble aproximado de 21 a 513 años. La gran amplitud es sustantiva: incluso su extremo inferior puede ser preocupante para la planificación de inundaciones.
+
+## Estimación de densidades con INLA
+
+El procedimiento *root–unroot* convierte la estimación de una densidad en regresión no paramétrica:
+
+1. Se divide la muestra en $T$ intervalos iguales y se cuentan $C_1,\ldots,C_T$ observaciones.
+2. Se aplica la transformación estabilizadora $Y_j=\sqrt{C_j+1/4}$.
+3. Se ajusta $Y_j=m_j+\varepsilon_j$ mediante RW2 y se obtienen la media y cuantiles posteriores de $m_j$.
+4. Se eleva al cuadrado y se normaliza para que la densidad integre uno; lo mismo produce las bandas creíbles.
+
+El paso de suavizado corresponde a una versión discreta de la ecuación
+
+$$
+\frac{d^2m(z)}{dz^2}=\sigma\frac{dW(z)}{dz}. \tag{11.7}
+$$
+
+Una aproximación de Galerkin con bases lineales por tramos convierte sus pesos en un GMRF de precisión dispersa y rango $n-2$, lo que hace viable el cálculo con INLA.
+
+`bri.density()` implementa el algoritmo. En una muestra normal estándar:
+
+```{r}
+set.seed(123)
+x <- rnorm(500)
+den.inla <- bri.density(x, cut = 0.3)
+den.kernel <- density(x, bw = "SJ")
+```
+
+y en una mezcla bimodal:
+
+```{r}
+set.seed(123)
+z <- c(rnorm(500, -1.5, 1), rnorm(500, 2.5, 0.75))
+den.inla <- bri.density(z, cut = 0.3)
+den.kernel <- density(z, bw = "SJ")
+```
+
+Los ajustes INLA son muy próximos a los estimadores kernel con ancho de banda *plug-in* de Sheather–Jones. La ventaja bayesiana es que las bandas creíbles de la densidad aparecen como producto natural del mismo ajuste, sin un procedimiento adicional.

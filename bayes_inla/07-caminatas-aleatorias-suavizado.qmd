@@ -1,0 +1,377 @@
+# Modelos de caminata aleatoria para métodos de suavizado
+
+Los métodos de suavizado desempeñan un papel importante en la regresión no paramétrica. En este capítulo se presentan *splines* de suavizado, *splines* de placa delgada y *splines* de regresión penalizados (P-splines), se muestra su relación con las distribuciones a priori de caminata aleatoria (RW) y se explica cómo efectuar inferencia bayesiana con INLA.
+
+## Introducción
+
+Dados valores fijos $x_1,\ldots,x_n\in\mathbb R$, supongamos
+
+$$
+y_i=f(x_i)+\varepsilon_i, \qquad i=1,\ldots,n,
+$$ {#eq-reg-no-param}
+
+donde los $\varepsilon_i$ son independientes e idénticamente distribuidos, de media cero y varianza desconocida $\sigma_\varepsilon^2$. El objetivo es estimar $f$.
+
+El enfoque paramétrico supone que $f(x)$ pertenece a una familia $f(x\mid\boldsymbol\beta)$ con un número finito de parámetros: por ejemplo, una función lineal, polinómica o exponencial. Es eficiente cuando la familia es correcta, comprime la información necesaria para predecir y suele ofrecer parámetros interpretables; por ello debe preferirse cuando existe buena información sustantiva. Su inconveniente es que excluye muchas funciones plausibles.
+
+El enfoque no paramétrico elige $f$ de una familia amplia de funciones suaves. Busca conservar la señal importante y omitir el ruido. La relación ya no se resume mediante una fórmula sencilla y suele requerir una descripción gráfica y más información para predecir. A cambio, su flexibilidad reduce el riesgo de errores graves cuando se sabe poco acerca de la forma funcional apropiada.
+
+## *Splines* de suavizado
+
+Para el modelo @eq-reg-no-param, el *spline* de suavizado de grado $2m-1$ elige $f$ para minimizar
+
+$$
+\sum_{i=1}^n\{y_i-f(x_i)\}^2+\lambda\int\{f^{(m)}(x)\}^2\,dx. \tag{7.2}
+$$
+
+El primer término mide la proximidad a los datos; el segundo penaliza la rugosidad. El parámetro $\lambda$ equilibra ambos objetivos. Para $\lambda=0$ se obtiene una interpolación y, cuando $\lambda\to\infty$, el ajuste de mínimos cuadrados dentro del espacio nulo de la penalización. Habitualmente $m=1$ o $2$, lo que produce *splines* lineales o cúbicos.
+
+### Priori RW para ubicaciones equiespaciadas
+
+Ordenemos $x_1<\cdots<x_n$ y definamos $d_i=x_i-x_{i-1}$. Si $d_i=d$, la penalización puede aproximarse por diferencias hacia atrás:
+
+$$
+\int\{f^{(m)}(x)\}^2dx\approx d^{1-2m}\sum_{i=m+1}^n\{\nabla^m f(x_i)\}^2.
+$$
+
+Se supone entonces
+
+$$
+\nabla^m f(x_i)\stackrel{\mathrm{ind}}\sim N(0,\sigma_f^2),
+$$
+
+donde $\nabla f(x_i)=f(x_i)-f(x_{i-1})$ y $\nabla^2f(x_i)=f(x_i)-2f(x_{i-1})+f(x_{i-2})$. Para $\mathbf f=(f(x_1),\ldots,f(x_n))^\mathsf T$, la densidad es gaussiana singular con precisión $\sigma_f^{-2}\mathbf Q_m$, donde $\mathbf Q_m=\mathbf D_m^\mathsf T\mathbf D_m$. Su rango es $n-m$ y su espacio nulo está generado por polinomios de orden menor que $m$. Con verosimilitud gaussiana, la media posterior es la versión bayesiana discretizada del *spline* y $\lambda=\sigma_\varepsilon^2/\sigma_f^2$.
+
+La suavidad aparece en las distribuciones condicionales completas. Para RW1, $f(x_i)$ depende de sus vecinos inmediatos; para RW2, de los dos vecinos a cada lado. Esta dependencia local hace que $\mathbf Q_m$ sea muy dispersa y permite cálculos rápidos. La singularidad exige restricciones de identificabilidad: con intercepto se usa habitualmente $\sum_i f(x_i)=0$; si también hay pendiente se necesita otra restricción.
+
+#### Ejemplo simulado
+
+Se generan 100 observaciones equiespaciadas con $f(x)=\sin^3(6\pi x)$ y ruido normal de desviación estándar 0.2:
+
+```{r}
+library(INLA)
+library(brinla)
+set.seed(1)
+n <- 100
+x <- seq(0, 1, length.out = n)
+f.true <- sin(2 * pi * x * 3)^3
+y <- f.true + rnorm(n, sd = 0.2)
+data.inla <- list(y = y, x = x)
+
+formula1 <- y ~ -1 + f(x, model = "rw1", constr = FALSE)
+formula2 <- y ~ -1 + f(x, model = "rw2", constr = FALSE)
+result1 <- inla(formula1, data = data.inla)
+result2 <- inla(formula2, data = data.inla)
+```
+
+`-1` excluye el intercepto y `constr = FALSE` evita la restricción de suma cero. Las medias y bandas creíbles se encuentran en `summary.random$x`. RW1 resulta demasiado ondulante; RW2 es más suave, pero pierde parte de la inflexión cerca de $x=0.75$ y el mínimo próximo a 0.9. La función verdadera posee suavidad variable, mientras que ambos modelos suponen suavidad constante.
+
+Como comparación frecuentista, `smooth.spline()` selecciona $\lambda$ por validación cruzada y `mgcv::gam(y ~ s(x))` ajusta una placa delgada de rango bajo. El primero queda entre RW1 y RW2 en suavidad; el segundo proporciona errores estándar derivados de la covarianza posterior bayesiana de sus parámetros.
+
+### Elección de las distribuciones a priori de las varianzas
+
+INLA especifica priors sobre las precisiones $\delta=1/\sigma_\varepsilon^2$ y $\tau=1/\sigma_f^2$. La opción predeterminada corresponde a una gamma con $a=1$ y $b=5\times10^{-5}$. Como suele ser difícil elicitar estos parámetros, se emplean priors débiles: $a=\epsilon_1,b=\epsilon_2$; $a=-1,b=0$ para una forma plana relacionada con REML; $a=-1/2,b=0$ como elección práctica; o $a=b=0$ para Jeffreys. Algunas son impropias: la de Jeffreys sólo puede usarse para $\delta$ sin comprometer la propiedad posterior bajo las condiciones estudiadas en la literatura. La gamma con parámetros positivos pequeños suele ser más estable.
+
+```{r}
+lgprior.error <- list(prec = list(param = c(0, 0)))
+lgprior.rw <- list(prec = list(param = c(-0.5, 0)))
+formula <- y ~ -1 + f(x, model = "rw2", constr = FALSE,
+                      hyper = lgprior.rw)
+result <- inla(formula, data = data.inla,
+               control.family = list(hyper = lgprior.error))
+```
+
+#### Escalamiento del prior
+
+Una misma trayectoria reexpresada en $[0,0.1]$ o $[0,1000]$ puede producir ajustes muy distintos bajo un hiperprior fijo. Los modelos RW penalizan desviaciones locales y la escala del predictor altera su magnitud. Además, una precisión no significa exactamente lo mismo bajo diferentes vecindades.
+
+La opción `scale.model = TRUE` reescala el modelo para que su varianza generalizada —la media geométrica de las varianzas marginales— sea uno. Así, el hiperparámetro adquiere una interpretación comparable entre escalas y estructuras. Está disponible para RW1, RW2, RW2D y Besag.
+
+```{r}
+formula.scaled <- y ~ -1 +
+  f(x, model = "rw2", constr = FALSE, scale.model = TRUE)
+result.scaled <- inla(formula.scaled, data = data.inla)
+```
+
+El costo es que la salida queda expresada en la nueva escala; no siempre conviene aplicarla si la escala original ya posee significado sustantivo.
+
+### Caminatas aleatorias en ubicaciones no equiespaciadas
+
+Los *splines* pueden representarse mediante la ecuación diferencial estocástica
+
+$$
+\frac{d^m f(x)}{dx^m}=\sigma_f\frac{dW(x)}{dx},\qquad m=1,2. \tag{7.3}
+$$
+
+Una representación exacta de proceso gaussiano tendría una covarianza densa. La solución débil conserva una precisión dispersa. Para RW1,
+
+$$
+f(x_{i+1})-f(x_i)\sim N(0,d_i\sigma_f^2),
+$$
+
+y la media condicional pondera los vecinos según sus distancias. Para RW2, una aproximación por elementos finitos al paseo aleatorio integrado produce una matriz de precisión bandeada, de rango $n-2$, cuyo espacio nulo está generado por $\mathbf1$ y $(x_1,\ldots,x_n)^\mathsf T$.
+
+#### Guía de alquileres de Múnich
+
+Los datos contienen 2 035 departamentos de 380 distritos. La respuesta es el alquiler por metro cuadrado; entre los predictores están superficie, año de construcción, localización e indicadores de equipamiento. Se observan relaciones no lineales con superficie y año:
+
+```{r}
+data(Munich, package = "brinla")
+formula1 <- rent ~ -1 + f(floor.size, model = "rw2", constr = FALSE)
+formula2 <- rent ~ -1 + f(year, model = "rw2", constr = FALSE)
+result1 <- inla(formula1, data = Munich)
+result2 <- inla(formula2, data = Munich)
+```
+
+INLA detecta automáticamente el espaciado irregular. Ambos efectos son claramente no lineales. Entre 1920 y 1950 hay pocos datos; allí el ajuste se vuelve casi lineal por tramos y las bandas se ensanchan.
+
+Para predecir en una malla que incluya todos los valores observados se utiliza `values`:
+
+```{r}
+formula.year <- rent ~ -1 +
+  f(year, model = "rw2", values = 1918:2001, constr = FALSE)
+result.year <- inla(formula.year, data = Munich)
+```
+
+Otra posibilidad consiste en añadir casos con respuesta ausente:
+
+```{r}
+x.new <- c(1925, 1938, 1945)
+data.pred <- list(y = c(Munich$rent, rep(NA, length(x.new))),
+                  x = c(Munich$year, x.new))
+formula.pred <- y ~ -1 + f(x, model = "rw2", constr = FALSE)
+result.pred <- inla(formula.pred, data = data.pred,
+                    control.predictor = list(compute = TRUE))
+```
+
+Las distribuciones así obtenidas corresponden a la media del alquiler. Un intervalo predictivo para una observación nueva debe incorporar además el error $\varepsilon$: se muestrea la precisión posterior con `inla.hyperpar.sample()`, se generan nuevos errores normales, se muestrea el predictor con `inla.rmarginal()` y se suman ambos componentes. Por ello esos intervalos son mucho más anchos que los intervalos creíbles del predictor lineal.
+
+## *Splines* de placa delgada
+
+Con dos predictores,
+
+$$y_i=f(x_{1i},x_{2i})+\varepsilon_i,$$
+
+el *spline* de placa delgada minimiza la suma de cuadrados más $\lambda J_2(f)$, donde
+
+$$
+J_2(f)=\iint\left[\left(\frac{\partial^2f}{\partial x_1^2}\right)^2+2\left(\frac{\partial^2f}{\partial x_1\partial x_2}\right)^2+\left(\frac{\partial^2f}{\partial x_2^2}\right)^2\right]dx_1dx_2. \tag{7.6}
+$$
+
+La penalización es invariante ante rotaciones y traslaciones, y vale cero únicamente para funciones lineales en $x_1,x_2$. Mecánicamente, es proporcional a la energía de flexión de una placa elástica infinita que interpola los puntos.
+
+### Retículas regulares
+
+En una retícula $n_1\times n_2$, se aplican diferencias segundas en ambas direcciones y una diferencia cruzada. El prior RW2D resultante tiene precisión
+
+$$
+\mathbf Q=\mathbf I_{n_2}\otimes\mathbf B_2+\mathbf B_2\otimes\mathbf I_{n_1}+2\mathbf B_1\otimes\mathbf B_1, \tag{7.7}
+$$
+
+con $\mathbf B_k=\mathbf D_k^\mathsf T\mathbf D_k$. Es una matriz dispersa de rango $n_1n_2-3$. Cada valor interior depende condicionalmente de doce vecinos. La dispersión es crucial porque la dimensión crece con rapidez.
+
+```{r}
+## Ejemplo esquemático en una retícula regular
+formula.rw2d <- y ~ -1 + f(index, model = "rw2d",
+                           nrow = nrow, ncol = ncol,
+                           constr = FALSE)
+```
+
+### Ubicaciones irregulares
+
+En localizaciones dispersas se construye una triangulación y una aproximación por elementos finitos. La función `bri.tps.prior()` crea el prior de placa delgada a partir de una malla INLA. El ejemplo `SPDEtoy` ilustra el procedimiento:
+
+```{r}
+data(SPDEtoy, package = "brinla")
+coords <- cbind(SPDEtoy$x, SPDEtoy$z)
+mesh <- inla.mesh.2d(coords, max.edge = c(0.15, 0.2), cutoff = 0.02)
+tps <- bri.tps.prior(mesh)
+data.inla <- list(y = SPDEtoy$y, x = mesh$idx$loc)
+result <- inla(y ~ -1 + f(x, model = tps), data = data.inla)
+```
+
+La predicción conjunta en puntos nuevos se realiza incorporándolos a la malla y anteponiendo valores `NA` a la respuesta. Los resúmenes están en `summary.fitted.values`; las marginales permiten calcular intervalos de máxima densidad posterior con `inla.hpdmarginal()`.
+
+## Modelo espacial de Besag
+
+En datos de área, dos regiones son vecinas si comparten frontera —aunque pueden emplearse otras definiciones—. Para regiones $i$ y $j$ vecinas,
+
+$$f(x_i)-f(x_j)\sim N(0,\sigma_f^2/w_{ij}),$$
+
+con pesos positivos y simétricos. La precisión tiene entradas
+
+$$
+Q_{ij}=\begin{cases}
+w_{i+},&i=j,\\
+-w_{ij},&i\sim j,\\
+0,&\text{en otro caso},
+\end{cases}
+$$
+
+donde $w_{i+}$ suma los pesos de los vecinos. Como cada fila suma cero, el rango es $n-1$. La media condicional de una región es el promedio ponderado de sus vecinos. Es un caso particular del modelo autorregresivo intrínseco de Besag.
+
+En Múnich, el efecto espacial del distrito se ajusta así:
+
+```{r}
+g <- system.file("demodata/munich.graph", package = "INLA")
+g.file <- inla.read.graph(g)
+formula <- rent ~ 1 + f(location, model = "besag", graph = g.file)
+result <- inla(formula, data = Munich,
+               control.predictor = list(compute = TRUE))
+```
+
+El grafo contiene los 380 nodos, el número de vecinos y sus índices. Los alquileres estimados son altos en el centro, junto al río Isar y cerca de parques; aparecen efectos negativos en distritos periféricos, donde también suele ser mayor la incertidumbre.
+
+## *Splines* de regresión penalizados (P-splines)
+
+Un P-spline aproxima
+
+$$f(x)=\sum_{j=1}^p\beta_jB_j(x)$$
+
+mediante bases B-spline y penaliza diferencias de orden $m$ entre coeficientes adyacentes:
+
+$$
+\sum_{i=1}^n\left[y_i-\sum_{j=1}^p\beta_jB_j(x_i)\right]^2+
+\lambda\sum_{j=m+1}^p(\nabla^m\beta_j)^2. \tag{7.12}
+$$
+
+Su representación bayesiana es
+
+$$
+\mathbf y\mid\boldsymbol\beta,\sigma_\varepsilon^2\sim
+N(\mathbf B\boldsymbol\beta,\sigma_\varepsilon^2\mathbf I),\qquad
+\boldsymbol\beta\mid\sigma_\beta^2\sim
+N(\mathbf0,\sigma_\beta^2\mathbf Q_m^{-}), \tag{7.13}
+$$
+
+con $\lambda=\sigma_\varepsilon^2/\sigma_\beta^2$. A diferencia del *spline* de suavizado, se usan muchas menos bases que observaciones; pueden incluirse suficientes nudos para asegurar flexibilidad y dejar que la penalización evite el sobreajuste.
+
+```{r}
+library(splines)
+p <- 25
+B.tmp <- bs(x, df = p, intercept = TRUE)
+attributes(B.tmp) <- NULL
+Bmat <- as(matrix(B.tmp, n, p), "sparseMatrix")
+data.inla <- list(y = y, x = 1:p)
+formula <- y ~ -1 + f(x, model = "rw2", constr = FALSE)
+result <- inla(formula, data = data.inla,
+               control.predictor = list(A = Bmat, compute = TRUE))
+```
+
+Con penalización RW1, aumentar de 25 a 80 grados de libertad puede producir sobreajuste. RW2 da curvas más suaves y menos sensibles al número de nudos, aunque puede suavizar en exceso los extremos.
+
+## Suavizado adaptativo con *splines*
+
+Una única $\lambda$ aplica igual suavizado en todo el dominio y puede funcionar mal ante picos, saltos o cambios frecuentes de curvatura. El modelo adaptativo sustituye el parámetro por una función positiva:
+
+$$
+\lambda(x)\frac{d^2f(x)}{dx^2}=\frac{dW(x)}{dx}. \tag{7.14}
+$$
+
+Valores pequeños permiten oscilaciones rápidas; valores grandes estiran la función y reducen la rugosidad. Se modela $v(x)=\log\lambda(x)$ mediante bases B-spline,
+
+$$v(x)=\sum_{k=1}^q\gamma_kB_k(x),$$
+
+y se asigna a $\boldsymbol\gamma$ un prior gaussiano propio. Una precisión identidad es sencilla pero sensible a los nudos; un prior SPDE disperso ofrece estimaciones más precisas y estables.
+
+```{r}
+adapt <- bri.adapt.prior(x, nknot = 5, type = "spde")
+data.inla <- list(y = y, x = adapt$x.ind)
+result <- inla(y ~ -1 + f(x, model = adapt), data = data.inla)
+```
+
+En el ejemplo simulado, el ajuste adaptativo mejora globalmente a los *splines* de suavizado y P-splines. El prior SPDE es menos sensible que el independiente a elegir cinco o diez nudos.
+
+## Regresión no paramétrica generalizada
+
+Si $Y_i$ pertenece a la familia exponencial y $\mu_i=E(Y_i)$, el modelo
+
+$$g(\mu_i)=f(x_i)$$
+
+combina GLM y suavizado no paramétrico. Un prior gaussiano para $f$ conserva la estructura gaussiana latente requerida por INLA.
+
+### Respuestas binomial y Poisson
+
+Se simula $f(x)=\sin x$ para 200 puntos en $[0,6]$. Para respuestas binomiales pueden usarse enlaces logit, probit o log-log complementario:
+
+```{r}
+set.seed(2)
+n <- 200
+x <- seq(0, 6, length.out = n)
+eta <- sin(x)
+Ntrials <- sample(c(1, 5, 10, 15), n, replace = TRUE)
+prob <- exp(eta) / (1 + exp(eta))
+y <- rbinom(n, Ntrials, prob)
+formula <- y ~ -1 + f(x, model = "rw2", constr = FALSE)
+result <- inla(formula, family = "binomial", data = list(y = y, x = x),
+               Ntrials = Ntrials,
+               control.predictor = list(compute = TRUE),
+               control.family = list(link = "logit"))
+```
+
+Para Poisson con exposición conocida $E_i$,
+
+$$Y_i\sim\operatorname{Poisson}(\Lambda_i),\qquad
+\log\Lambda_i=\log E_i+\sin(x_i),$$
+
+se pasa `E = E` a `inla()`. Si las exposiciones no valen uno, `summary.fitted.values` resume $\exp\{f(x_i)\}$; sus medias, desviaciones y cuantiles deben multiplicarse por $E_i$ para obtener $\Lambda_i$.
+
+### Precipitación en Tokio
+
+Los datos `Tokyo` registran lluvia diaria durante dos años. Para el 29 de febrero hay una sola observación; los demás días tienen dos. Se modela el número de días lluviosos como binomial y el logit de su probabilidad mediante una RW2 circular, que conecta el final de diciembre con el comienzo de enero:
+
+```{r}
+data(Tokyo, package = "INLA")
+formula <- y ~ -1 + f(time, model = "rw2", cyclic = TRUE,
+                      constr = FALSE)
+result <- inla(formula, family = "binomial", Ntrials = n,
+               data = Tokyo, control.predictor = list(compute = TRUE))
+```
+
+La probabilidad diaria típica no supera 0.5 y es relativamente elevada en abril, junio y agosto. Para predecir los primeros tres días de 1985 se añaden respuestas `NA`, se extienden `time` y `n`, y se usa `control.predictor = list(compute = TRUE, link = 1)`.
+
+## Conjuntos de excursión con incertidumbre
+
+Para localizar dónde $f(x)$ supera un nivel $u$, es común definir
+
+$$D_m=\{x:P(f(x)>u\mid\mathbf y)>1-\alpha\}. \tag{7.15}$$
+
+Pero $\alpha$ es un error puntual y no controla la probabilidad simultánea sobre todo el conjunto. Un conjunto de excursión $D$ exige
+
+$$P\{f(x)>u\text{ para todo }x\in D\mid\mathbf y\}\geq1-\alpha.$$
+
+Su cálculo requiere integración de alta dimensión. El método de Bolin y Lindgren combina una familia paramétrica de conjuntos con muestreo de importancia secuencial.
+
+### Datos fósiles
+
+Los datos contienen 106 conchas fósiles, su edad en millones de años y la razón de isótopos de estroncio. Como algunas edades se repiten y el espaciado es irregular, se agrupan en 100 intervalos y se usa RW2 escalado:
+
+```{r}
+data(fossil, package = "brinla")
+age.new <- inla.group(fossil$age, n = 100)
+inla.data <- list(y = fossil$sr, x = age.new)
+formula <- y ~ -1 + f(x, model = "rw2", constr = FALSE,
+                      scale.model = TRUE)
+result <- inla(formula, data = inla.data,
+               control.compute = list(config = TRUE))
+```
+
+La curva revela variaciones importantes; una depresión alrededor de 98 millones de años no es concluyente porque su intervalo es ancho. Las probabilidades marginales de superar 0.74 se calculan con `inla.pmarginal()`, pero no son simultáneas. El conjunto de excursión al 95 % se obtiene con:
+
+```{r}
+res.exc <- excursions.brinla(result, name = "x", u = 0.74,
+                             alpha = 0.05, type = ">", method = "NI")
+res.exc$E
+```
+
+El conjunto es menor que el basado en probabilidades marginales. La función de excursión `res.exc$F`, entre cero y uno, ofrece una medida simultánea análoga en espíritu a las probabilidades puntuales; siempre queda por debajo de ellas.
+
+En los datos de Tokio interesa hallar días cuya probabilidad de lluvia exceda 0.3 simultáneamente. Como el campo latente está en escala logit, se transforma el umbral y, por tratarse de datos no gaussianos, se usa `NIQC`:
+
+```{r}
+u.pred <- log(0.3 / (1 - 0.3))
+res.exc <- excursions.brinla(result, name = "time", u = u.pred,
+                             type = ">", method = "NIQC", alpha = 0.05)
+```
+
+El análisis marginal selecciona 32 días consecutivos entre mayo y junio; el requisito conjunto al 95 % conserva 28. Esta diferencia ilustra por qué una colección de afirmaciones puntuales no equivale a una afirmación simultánea sobre toda una región.

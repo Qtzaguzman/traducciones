@@ -1,0 +1,238 @@
+# Modelos aditivos y aditivos generalizados
+
+Los suavizadores del capítulo 7 pueden extenderse a más dimensiones, pero la varianza de los estimadores no paramétricos crece con rapidez con el número de predictores: la llamada maldición de la dimensionalidad. Imponer estructura puede introducir sesgo, pero reducir drásticamente la varianza. La estructura más utilizada es la aditiva.
+
+## Modelos aditivos
+
+La regresión lineal
+
+$$y_i=\beta_0+\sum_{j=1}^p\beta_jx_{ij}+\varepsilon_i$$
+
+puede flexibilizarse mediante transformaciones, aunque la cantidad de términos crece, especialmente al incluir interacciones. En el otro extremo, estimar una sola función $f(x_{i1},\ldots,x_{ip})$ es impráctico para $p>2$. El compromiso aditivo es
+
+$$
+y_i=\beta_0+\sum_{j=1}^pf_j(x_{ij})+\varepsilon_i. \tag{9.1}
+$$
+
+Cada $f_j$ puede ser paramétrica o una función suave desconocida. El modelo sigue siendo interpretable porque sus efectos marginales se pueden representar; las variables categóricas entran como en regresión ordinaria. Si hay interacciones fuertes, deben añadirse términos $f_{jk}(x_j,x_k)$ o curvas distintas por nivel de un factor.
+
+Frecuentemente se ajustan estos modelos mediante *backfitting* o bases spline con verosimilitud penalizada. En la versión bayesiana, $\varepsilon_i\sim N(0,\sigma^2)$ y cada $f_j$ recibe un prior suave $p(f_j\mid\tau_j)$. El MCMC con *backfitting* puede mezclar lentamente porque la actualización de cada función depende de las demás. Con priors gaussianos de precisión dispersa, el modelo es gaussiano latente e INLA ofrece una alternativa eficiente.
+
+### Datos simulados
+
+El ejemplo de Gu y Wahba genera 400 observaciones, cuatro predictores en $[0,1]$ y ruido normal de desviación estándar 2:
+
+```{r}
+library(INLA)
+library(brinla)
+library(mgcv)
+set.seed(2)
+dat <- gamSim(1, n = 400, dist = "normal", scale = 2)
+
+n.group <- 50
+dat.inla <- list(
+  y = dat$y,
+  x0 = inla.group(dat$x0, n = n.group, method = "quantile"),
+  x1 = inla.group(dat$x1, n = n.group, method = "quantile"),
+  x2 = inla.group(dat$x2, n = n.group, method = "quantile"),
+  x3 = inla.group(dat$x3, n = n.group, method = "quantile")
+)
+
+formula <- y ~
+  f(x0, model = "rw2", scale.model = TRUE) +
+  f(x1, model = "rw2", scale.model = TRUE) +
+  f(x2, model = "rw2", scale.model = TRUE) +
+  f(x3, model = "rw2", scale.model = TRUE)
+result <- inla(formula, data = dat.inla)
+```
+
+Se agrupan valores demasiado próximos y se escalan los cuatro priors RW2. La restricción predeterminada de suma cero identifica las funciones frente al intercepto; por ello, al comparar con la verdad, también deben centrarse las funciones verdaderas. Los cuatro ajustes recuperan bien sus formas. La desviación posterior del ruido queda cerca de 2.
+
+### Guía de alquileres de Múnich
+
+Los análisis separados del capítulo 7 se combinan ahora con indicadores de calidad y número de habitaciones. El modelo incluye un efecto espacial Besag para el distrito, RW2 para año y superficie y coeficientes lineales para las variables categóricas. Se omite el intercepto porque los indicadores de habitaciones actúan como niveles de referencia.
+
+```{r}
+data(Munich, package = "brinla")
+g <- system.file("demodata/munich.graph", package = "INLA")
+
+formula <- rent ~
+  f(location, model = "besag", graph = g, scale.model = TRUE) +
+  f(year, model = "rw2", values = 1918:2001, scale.model = TRUE) +
+  f(floor.size, model = "rw2", values = 17:185, scale.model = TRUE) +
+  Gute.Wohnlage + Beste.Wohnlage + Keine.Wwv + Keine.Zh +
+  Kein.Badkach + Besond.Bad + Gehobene.Kueche +
+  zim1 + zim2 + zim3 + zim4 + zim5 + zim6 - 1
+
+result <- inla(formula, data = Munich,
+               control.predictor = list(compute = TRUE))
+```
+
+Todos los coeficientes categóricos tienen intervalos creíbles al 95 % que excluyen cero. El efecto de la superficie disminuye hasta unos 50 m² y después se estabiliza; el año muestra una forma en U entre 1920 y 1960 y luego aumenta. Los alquileres son mayores en las regiones centrales, mientras que la incertidumbre espacial es mayor en la periferia.
+
+El gráfico de residuos frente al ajuste no presenta un patrón sistemático, aunque el modelo sobreestima ligeramente alquileres bajos y subestima los altos. La asimetría a la derecha de la respuesta hace imperfecta la suposición normal, pero el ajuste global es razonable.
+
+## Modelos aditivos generalizados
+
+Si $Y_i$ pertenece a la familia exponencial, con $E(Y_i)=\mu_i$, un GAM adopta la forma
+
+$$
+g(\mu_i)=\eta_i=\beta_0+\sum_{j=1}^pf_j(x_{ij}). \tag{9.3}
+$$
+
+Así se combinan GLM y modelos aditivos. En INLA basta incorporar la aproximación de Laplace para la verosimilitud no gaussiana.
+
+### Respuesta binaria: cifosis
+
+Los datos corresponden a 83 pacientes pediátricos sometidos a cirugía vertebral. La respuesta indica presencia de cifosis; los predictores son edad en meses, vértebra inicial y número de niveles intervenidos. Primero se permite que los tres efectos sean no paramétricos:
+
+$$
+\operatorname{logit}(p_i)=\beta_0+f_1(\mathrm{Age}_i)+
+f_2(\mathrm{StartVert}_i)+f_3(\mathrm{NumVert}_i). \tag{9.4}
+$$
+
+```{r}
+data(kyphosis, package = "brinla")
+formula1 <- Kyphosis ~ 1 +
+  f(Age, model = "rw2") +
+  f(StartVert, model = "rw2") +
+  f(NumVert, model = "rw2")
+result1 <- inla(
+  formula1, family = "binomial", data = kyphosis,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(waic = TRUE)
+)
+```
+
+El riesgo aumenta con la edad hasta aproximadamente 120 meses y luego disminuye; las bandas se ensanchan mucho después de 200 meses por falta de observaciones. `StartVert` y `NumVert` muestran patrones esencialmente lineales. El GAM sugiere por tanto el modelo más simple
+
+$$
+\eta_i=\beta_0+\beta_1\mathrm{StartVert}_i+
+\beta_2\mathrm{NumVert}_i+
+\beta_3\mathrm{Age}_i+
+\beta_4\mathrm{Age}_i^2. \tag{9.5}
+$$
+
+```{r}
+kyphosis$AgeSq <- kyphosis$Age^2
+formula2 <- Kyphosis ~ StartVert + NumVert + Age + AgeSq
+result2 <- inla(
+  formula2, family = "binomial", data = kyphosis,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(waic = TRUE)
+)
+```
+
+Al controlar la edad, una vértebra inicial mayor reduce el riesgo y más vértebras intervenidas lo aumentan. Ambos términos de edad son distintos de cero. Los WAIC son aproximadamente 65.92 para el GAM y 65.47 para el cuadrático: la sencillez del modelo paramétrico compensa su pequeña pérdida de flexibilidad, pero fue el GAM el que reveló su forma.
+
+### Respuesta de conteo: huevos de caballa
+
+El levantamiento de 1992 contiene 634 muestras de huevos, sus coordenadas, área de red, salinidad, temperatura a 20 m y distancia al contorno submarino de 200 m. Se modela
+
+$$
+Y_i\sim\operatorname{Poisson}(\lambda_i),
+$$
+
+$$
+\log\lambda_i=\log(\mathrm{net.area}_i)+
+\beta_1\mathrm{salinity}_i+\beta_2\mathrm{c.dist}_i+
+f_1(\mathrm{temp.20m}_i)+f_2(\mathrm{lon}_i,\mathrm{lat}_i). \tag{9.6}
+$$
+
+$f_1$ usa RW2 y $f_2$ un prior de placa delgada sobre una triangulación:
+
+```{r}
+data(mack, package = "gamair")
+loc.obs <- cbind(mack$lon, mack$lat)
+mesh <- inla.mesh.2d(loc.obs, cutoff = 0.05, max.edge = c(0.5, 1))
+tps <- bri.tps.prior(mesh)
+node <- mesh$idx$loc
+
+formula <- egg.count ~ -1 + salinity + c.dist +
+  f(temp.20m, model = "rw2") +
+  f(node, model = tps, diagonal = 1e-6)
+result <- inla(formula, family = "poisson", data = mack,
+               offset = log(net.area))
+```
+
+La salinidad tiene efecto positivo; el intervalo de `c.dist` contiene cero. La temperatura produce un patrón complejo: ascenso lento hasta unos 14.5 °C, descenso acusado hasta 16 °C, nuevo ascenso y caída final.
+
+Para predecir sobre la cuadrícula `mackp`, se unen sus covariables y ubicaciones a las observadas, se añaden respuestas `NA`, se reconstruyen malla y prior y se indica el enlace para los casos ausentes:
+
+```{r}
+link <- rep(NA, length(y.pre))
+link[is.na(y.pre)] <- 1
+result.pred <- inla(
+  formula, family = "poisson", data = mack.pre, offset = log(E.pre),
+  control.predictor = list(link = link, compute = TRUE),
+  control.compute = list(config = TRUE)
+)
+```
+
+La abundancia predicha es alta en el borde occidental y baja en el sudeste; la semejanza con el mapa espacial indica que la localización domina a las otras covariables. Para localizar celdas con al menos 10 huevos y probabilidad conjunta 0.95 se usa el umbral en escala logarítmica:
+
+```{r}
+res.exc <- excursions.brinla(
+  result.pred, name = "Predictor", ind = idx.pre,
+  u = log(10), type = ">", alpha = 0.05, method = "NIQC"
+)
+```
+
+## Modelos aditivos generalizados mixtos
+
+Un GAMM añade a un GAM efectos aleatorios que representan agrupamiento o jerarquías:
+
+$$
+g(\mu_i)=\beta_0+\sum_jf_j(x_{ij})+\sum_k g_k(u_{ik}). \tag{9.7}
+$$
+
+Con priors gaussianos en todos los componentes, sigue siendo un modelo gaussiano latente.
+
+### Huevos de lenguado en el canal de Bristol
+
+Se midió la densidad de huevos en cuatro etapas de desarrollo, en estaciones visitadas durante cinco campañas. Las coordenadas son `lo` y `la`, `t` es el tiempo de la campaña, `a.0` y `a.1` delimitan la edad del huevo. Se usa la amplitud de la clase como *offset* y su edad media como predictor:
+
+```{r}
+data(sole, package = "gamair")
+solr <- sole
+solr$off <- log(solr$a.1 - solr$a.0)
+solr$a <- (solr$a.1 + solr$a.0) / 2
+solr$t <- (solr$t - mean(solr$t)) / sqrt(var(solr$t))
+solr$la <- solr$la - mean(solr$la)
+solr$lo <- solr$lo - mean(solr$lo)
+solr$station <- as.numeric(factor(with(solr, paste(la, lo, t))))
+solr$eggs <- solr$eggs * 1000
+solr$off <- solr$off + log(1000)
+```
+
+Más del 76 % de las respuestas son cero. Se usa una binomial negativa inflada en cero, con términos lineales de edad, interacciones espacio-tiempo polinómicas, RW2 para el tiempo, placa delgada espacial y efecto iid de estación:
+
+```{r}
+loc <- cbind(solr$lo, solr$la)
+mesh <- inla.mesh.2d(loc, max.edge = c(0.1, 0.2))
+tps <- bri.tps.prior(mesh, constr = TRUE)
+node <- mesh$idx$loc
+
+formula1 <- eggs ~ a + I(la * t) + I(la * t^2) +
+  I(lo * t) + I(lo * t^2) +
+  f(t, a, model = "rw2", scale.model = TRUE) +
+  f(node, model = tps, diagonal = 1e-6) +
+  f(station, model = "iid")
+
+result <- inla(
+  formula1, family = "zeroinflatednbinomial0",
+  offset = off, data = solr,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE)
+)
+```
+
+Se comparan este GAMM, el mismo modelo sin estación y una versión Poisson inflada en cero. DIC y WAIC favorecen claramente la binomial negativa con efecto de estación, confirmando tanto agrupamiento como sobredispersión. La edad media tiene efecto negativo; latitud-tiempo interactúan positivamente y longitud-tiempo negativamente. El efecto temporal es cóncavo y el mapa muestra densidades elevadas en el sudeste. La probabilidad estructural de cero estimada, 0.761, coincide casi exactamente con la proporción observada.
+
+Para diagnóstico se examina el CPO $p(y_i\mid\mathbf y_{-i})$. Los indicadores `result$cpo$failure` detectan aproximaciones dudosas; en el ejemplo hay 68 y se recalculan explícitamente:
+
+```{r}
+improved.result <- inla.cpo(result)
+```
+
+La observación con menor CPO contiene 17 048 unidades en la primera etapa, frente a 319, 319 y 159 en las otras etapas de la misma estación. Es un caso genuinamente inusual que merece investigación sustantiva.

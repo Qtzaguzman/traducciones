@@ -1,0 +1,246 @@
+# Regresión con procesos gaussianos
+
+La regresión con procesos gaussianos (GPR) asigna un prior de proceso gaussiano a la función que relaciona los predictores con la respuesta. Puede implementarse con INLA, aunque es necesario elegir representaciones que conserven la eficiencia computacional.
+
+## Introducción
+
+Considérese
+
+$$y_i=f(x_i)+\varepsilon_i,\qquad i=1,\ldots,n,$$
+
+y el prior
+
+$$f(x)\sim GP\{m(x),k(x,x')\}.$$
+
+Cualquier colección finita de valores de $f$ tiene una distribución gaussiana conjunta con media $m$ y covarianza $k$. Esto parece encajar inmediatamente en un modelo gaussiano latente, pero surgen dos dificultades: interesa estimar $f$ también fuera de los puntos observados y, para muchas covarianzas, la matriz de precisión es densa. En problemas medianos o grandes se necesitan covarianzas que permitan una precisión dispersa.
+
+La solución procede de la ecuación diferencial parcial estocástica (SPDE)
+
+$$
+(\kappa^2-\Delta)^{\alpha/2}\{\tau f(x)\}=W(x),\qquad x\in\mathbb R^d, \tag{8.1}
+$$
+
+donde $\kappa$ es un parámetro de escala, $\Delta$ el laplaciano, $\alpha$ controla la suavidad, $\tau$ se relaciona con la varianza y $W$ es ruido blanco gaussiano. Su solución estacionaria posee covarianza Matérn, con $\nu=\alpha-d/2$. INLA usa habitualmente $\alpha=2$; los valores disponibles $0<\alpha\leq2$ permiten aproximaciones dispersas. El límite de núcleo gaussiano, de soporte no acotado, conduce a una precisión densa y no resulta práctico aquí.
+
+La solución se aproxima mediante
+
+$$f(x)=\sum_{k=1}^b\beta_kB_k(x),$$
+
+con bases locales de soporte compacto y coeficientes determinados por elementos finitos. $b$ debe ser suficientemente grande para representar la curva, pero no tanto que desperdicie cálculo.
+
+Es preferible expresar el prior mediante la desviación estándar marginal $\sigma$ y el alcance $\rho$, distancia a la que la correlación cae aproximadamente a 0.13. Ambos se relacionan con $\tau$ y $\kappa$; se pueden especificar valores centrales $\sigma_0,\rho_0$ y perturbaciones gaussianas en escala logarítmica:
+
+$$
+\log\sigma=\log\sigma_0+\theta_1,\qquad
+\log\rho=\log\rho_0+\theta_2. \tag{8.2}
+$$
+
+### Ejemplo de isótopos en fósiles
+
+Los datos registran la razón de isótopos de estroncio en conchas fósiles del Cretácico medio, entre aproximadamente 90 y 125 millones de años. La razón se reescala para facilitar su lectura.
+
+```{r}
+library(INLA)
+library(brinla)
+data(fossil, package = "brinla")
+fossil$sr <- (fossil$sr - 0.7) * 100
+```
+
+El ajuste SPDE se construye por etapas. Primero se crea una malla unidimensional de 25 bases cuadráticas:
+
+```{r}
+nbasis <- 25
+mesh <- inla.mesh.1d(
+  seq(min(fossil$age), max(fossil$age), length.out = nbasis),
+  degree = 2
+)
+```
+
+El grado dos produce una curva más suave que los grados cero o uno. Aquí el número de bases determina la flexibilidad disponible, no el grado efectivo de suavizado, que depende sobre todo de $\rho$.
+
+```{r}
+alpha <- 2
+nu <- alpha - 1/2
+sigma0 <- sd(fossil$sr)
+rho0 <- 0.25 * diff(range(fossil$age))
+kappa0 <- sqrt(8 * nu) / rho0
+tau0 <- sqrt(1 / (4 * kappa0^3 * sigma0^2))
+
+spde <- inla.spde2.matern(
+  mesh, alpha = alpha,
+  B.tau = cbind(log(tau0), 1, 0),
+  B.kappa = cbind(log(kappa0), 0, 1),
+  theta.prior.prec = 1e-4
+)
+```
+
+`B.tau` y `B.kappa` definen modelos lineales para $\log\tau$ y $\log\kappa$; `theta.prior.prec` fija la precisión gaussiana de sus perturbaciones. Se han utilizado valores iniciales derivados de los datos, aunque el conocimiento experto debe prevalecer cuando esté disponible.
+
+La matriz $A$ proyecta la representación de la malla sobre los lugares donde se desean posteriores. El índice y la pila mantienen alineados datos, efectos y proyección:
+
+```{r}
+A <- inla.spde.make.A(mesh, loc = fossil$age)
+index <- inla.spde.make.index("sinc", n.spde = spde$n.spde)
+st.est <- inla.stack(
+  data = list(y = fossil$sr), A = list(A),
+  effects = list(index), tag = "est"
+)
+
+formula <- y ~ -1 + f(sinc, model = spde)
+result <- inla(
+  formula, data = inla.stack.data(st.est), family = "gaussian",
+  control.predictor = list(A = inla.stack.A(st.est), compute = TRUE)
+)
+```
+
+El intercepto se excluye por redundancia. Los índices de `inla.stack.index()` permiten extraer la media posterior y las bandas creíbles de `summary.fitted.values`. Las bandas se ensanchan donde escasean los datos. `bri.gpr(fossil$age, fossil$sr)` reúne estos pasos, pero conocer la construcción completa permite modificar la malla y los priors.
+
+## Priors de complejidad penalizada
+
+Los priors PC proporcionan una manera interpretable y coherente de regularizar el modelo [@simpson2017]. Se especifican mediante
+
+$$P(\rho<\rho_0)=p_\rho,\qquad P(\sigma>\sigma_0)=p_\sigma.$$
+
+$\rho_0$ representa un alcance sorprendentemente corto y $\sigma_0$ una variabilidad sorprendentemente grande. Las probabilidades pequeñas no fijan esos valores como destino del posterior: expresan información débil sobre escalas plausibles.
+
+Para los fósiles puede establecerse $P(\rho<5)=0.05$ y $P(\sigma>2)=0.05$:
+
+```{r}
+spde.pc <- inla.spde2.pcmatern(
+  mesh, alpha = alpha,
+  prior.range = c(5, 0.05),
+  prior.sigma = c(2, 0.05)
+)
+formula.pc <- y ~ -1 + f(sinc, model = spde.pc)
+result.pc <- inla(
+  formula.pc, data = inla.stack.data(st.est), family = "gaussian",
+  control.predictor = list(A = inla.stack.A(st.est), compute = TRUE)
+)
+```
+
+El ajuste es muy parecido al anterior. En `brinla`, la llamada abreviada es `bri.gpr(fossil$age, fossil$sr, pcprior = c(5, 2))`.
+
+## Bandas creíbles para la suavidad
+
+Las bandas creíbles puntuales describen la posición de la curva, pero no responden directamente si una ondulación es real: dentro de ellas caben funciones de suavidades muy diferentes. En GPR, el posterior de $\rho$ cuantifica precisamente esa incertidumbre.
+
+```{r}
+error.sd <- bri.hyper.sd(result$marginals.hyperpar[[1]])
+mres <- inla.spde.result(result, "sinc", spde)
+sigma.marg <- inla.tmarginal(
+  function(x) sqrt(x), mres$marginals.variance.nominal[[1]]
+)
+rho.marg <- mres$marginals.range.nominal[[1]]
+```
+
+En el ejemplo, la incertidumbre sobre el error de medición es pequeña, pero la del alcance es considerable. Para visualizar su efecto, se fija $\sigma$ en su mediana posterior y se reajusta el modelo con los extremos del intervalo creíble de $\rho$ (equivalentemente, los extremos correspondientes de $\kappa$). Las dos medias posteriores forman una banda de suavidad: una representa el extremo rugoso y otra el suave.
+
+Ambas curvas muestran una depresión cerca de 97 millones de años, aunque es más marcada en el extremo rugoso. La conclusión sobre su existencia es por tanto más sólida que la sugerida por una sola curva. `bri.smoothband()` automatiza el cálculo. Estas bandas hablan de la *forma* de $f$, no de su valor en un punto; para esto último siguen siendo necesarias las bandas creíbles ordinarias.
+
+## Campos no estacionarios
+
+Una función puede variar en amplitud y suavidad a lo largo del dominio. La extensión no estacionaria escribe
+
+$$
+\log\tau(x)=\boldsymbol\gamma_\tau^\mathsf T\mathbf b_\tau(x),
+\qquad
+\log\kappa(x)=\boldsymbol\gamma_\kappa^\mathsf T\mathbf b_\kappa(x),
+$$
+
+con bases que pueden compartir o no coeficientes. Para demostrarlo se usa la función de suavidad variable $\sin^3(6\pi x)$ con ruido normal.
+
+Un ajuste estacionario es demasiado rugoso en la parte plana y demasiado suave donde la curva cambia deprisa. Se introducen cinco bases B-spline para cada parámetro:
+
+```{r}
+basis.T <- as.matrix(inla.mesh.basis(mesh, type = "b.spline",
+                                     n = 5, degree = 2))
+basis.K <- as.matrix(inla.mesh.basis(mesh, type = "b.spline",
+                                     n = 5, degree = 2))
+spde.ns <- inla.spde2.matern(
+  mesh, alpha = alpha,
+  B.tau = cbind(basis.T[-1, ], 0),
+  B.kappa = cbind(0, basis.K[-1, ] / 2),
+  theta.prior.prec = 1e-4
+)
+```
+
+Los ceros asignan conjuntos separados de parámetros; la división entre dos ajusta la parametrización interna de $\kappa$. El campo no estacionario sigue la región plana y a la vez recupera máximos, mínimos e inflexiones. `bri.nonstat()` ofrece una interfaz abreviada.
+
+## Interpolación con incertidumbre
+
+Si se observan pares $(x_i,f(x_i))$ prácticamente sin error, todavía existe incertidumbre entre los puntos. Esto ocurre, por ejemplo, cuando evaluar $f$ requiere simulaciones informáticas costosas. GPR permite cuantificarla llevando la varianza de observación casi a cero.
+
+```{r}
+x <- c(0, 0.1, 0.2, 0.3, 0.7, 1.0)
+y <- c(0, 0.5, 0, -0.5, 1, 0)
+td <- data.frame(x, y)
+
+nbasis <- 100
+mesh <- inla.mesh.1d(seq(0, 1, length.out = nbasis), degree = 2)
+spde <- inla.spde2.pcmatern(
+  mesh, alpha = 2,
+  prior.range = c(0.05, 0.1), prior.sigma = c(5, 0.05)
+)
+A <- inla.spde.make.A(mesh, loc = td$x)
+Ap <- inla.spde.make.A(mesh, loc = seq(0, 1, length.out = 101))
+index <- inla.spde.make.index("sinc", n.spde = spde$n.spde)
+
+st.est <- inla.stack(data = list(y = td$y), A = list(A),
+                     effects = list(index), tag = "est")
+st.pred <- inla.stack(data = list(y = NA), A = list(Ap),
+                      effects = list(index), tag = "pred")
+stack.all <- inla.stack(st.est, st.pred)
+```
+
+La precisión del error se fija en $10^8$:
+
+```{r}
+formula <- y ~ -1 + f(sinc, model = spde)
+result <- inla(
+  formula, data = inla.stack.data(stack.all), family = "gaussian",
+  control.predictor = list(A = inla.stack.A(stack.all), compute = TRUE),
+  control.family = list(
+    hyper = list(prec = list(fixed = TRUE, initial = 1e8))
+  )
+)
+```
+
+La curva pasa prácticamente por las seis observaciones, pero las bandas se abren entre ellas. Puede extraerse la marginal en cualquier punto de la malla, por ejemplo $x=0.5$. Con tan pocos datos, la elección de $\alpha$ afecta mucho el resultado; cambios moderados de los priors de alcance y desviación suelen afectar menos.
+
+También aquí pueden trazarse los ajustes asociados con los extremos del intervalo posterior de $\rho$. La representación rugosa pierde pronto la correlación entre puntos separados y retorna hacia un nivel constante; la representación del extremo superior es más suave. Esta vista complementa las bandas puntuales: una describe incertidumbre sobre la posición, la otra sobre la suavidad.
+
+## Respuesta de supervivencia
+
+GPR puede incorporarse al predictor lineal de distribuciones no gaussianas. En un modelo de tiempo de falla acelerado Weibull se sustituye la relación paramétrica por
+
+$$\log\lambda=f(x),$$
+
+donde $\lambda$ es la tasa. Pueden añadirse términos paramétricos u otros procesos para más covariables.
+
+En los datos de cáncer de laringe se modela el tiempo de supervivencia únicamente mediante la edad:
+
+```{r}
+data(larynx, package = "brinla")
+xspat <- larynx$age
+mesh <- inla.mesh.1d(
+  seq(min(xspat), max(xspat), length.out = 25), degree = 2
+)
+spde <- inla.spde2.pcmatern(
+  mesh, alpha = 2,
+  prior.range = c(20, 0.1), prior.sigma = c(10, 0.05)
+)
+A <- inla.spde.make.A(mesh, loc = xspat)
+index <- inla.spde.make.index("sinc", n.spde = spde$n.spde)
+st.est <- inla.stack(
+  data = list(time = larynx$time, censor = larynx$delta),
+  A = list(A), effects = list(index), tag = "est"
+)
+
+formula <- inla.surv(time, censor) ~ 0 + f(sinc, model = spde)
+result <- inla(
+  formula, data = inla.stack.data(st.est), family = "weibull.surv",
+  control.predictor = list(A = inla.stack.A(st.est), compute = TRUE)
+)
+```
+
+La forma Weibull es un hiperparámetro. Junto con $\lambda=\exp(\eta)$ permite transformar el predictor en supervivencia media y riesgo, propagando sus cuantiles para obtener bandas creíbles. El riesgo crece con la edad y no aparece evidencia fuerte de no linealidad, de modo que el término lineal usado en el modelo paramétrico del capítulo 6 resulta razonable.

@@ -1,0 +1,364 @@
+# Modelos lineales mixtos y lineales generalizados mixtos
+
+En los modelos lineales y GLM suponemos que las respuestas son independientes una vez condicionado el predictor lineal. Con estructuras agrupadas o jerárquicas, o varias observaciones por individuo, las respuestas son dependientes. Este capítulo extiende LM y GLM para representar esa dependencia. Partiremos de una agrupación sencilla, estudiaremos datos longitudinales y terminaremos con modelos lineales generalizados mixtos (GLMM).
+
+## Modelos lineales mixtos
+
+Un modelo lineal mixto (LMM) tiene respuesta gaussiana y combina componentes fijos y aleatorios:
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\mathbf Z\mathbf u+\boldsymbol\varepsilon.
+$$
+
+Sin $\mathbf Z\mathbf u$ sería un modelo lineal. En la formulación frecuentista, $\boldsymbol\beta$ es fijo y $\mathbf u$ sigue una normal multivariante de media cero y covarianza desconocida. Desde una perspectiva bayesiana todos los parámetros son aleatorios, aunque conservaremos la terminología porque ambos conjuntos reciben tratamientos distintos.
+
+Para construir e interpretar el modelo suele ser más cómodo el formato gaussiano latente
+
+$$
+\eta_i=\beta_0+\sum_j\beta_jx_{ij}+\sum_k f_k(u_{ik}). \qquad\text{(5.1)}
+$$
+
+Los términos $f_k$ introducen patrones de correlación apropiados:
+
+- **Agrupación:** respuestas correlacionadas dentro de grupos o mediciones repetidas de una persona.
+- **Jerarquía:** casos dentro de grupos que a su vez pertenecen a niveles superiores, como estudiantes, clases, escuelas y distritos.
+- **Longitudinal:** seguimiento de un individuo a lo largo del tiempo.
+
+En un LMM la respuesta debe ser gaussiana. Respuestas binomiales, Poisson u otras requieren un GLMM.
+
+## Un solo efecto aleatorio
+
+@hawkins2005 informa el contenido de nitrógeno de juncos en tres sitios de Cambridgeshire, con cinco observaciones por sitio. Nos interesa más la variación regional y la predicción en un nuevo lugar que comparar específicamente A, B y C; por ello el sitio es un efecto aleatorio:
+
+$$
+y_{ij}=\alpha+u_j+\varepsilon_{ij},\qquad
+u_j\sim N(0,\sigma_u^2),\quad
+\varepsilon_{ij}\sim N(0,\sigma_\varepsilon^2).
+$$
+
+Como referencia:
+
+```{r}
+data(reeds, package = "brinla")
+library(lme4)
+mmod <- lmer(nitrogen ~ 1 + (1 | site), data = reeds)
+summary(mmod)
+```
+
+Máxima verosimilitud estima $\sigma_u=0.433$, $\sigma_\varepsilon=0.292$ y $\alpha=3.029$. Con INLA:
+
+```{r}
+library(INLA)
+library(brinla)
+formula <- nitrogen ~ 1 + f(site, model = "iid")
+imod <- inla(formula, family = "gaussian", data = reeds)
+summary(imod)
+```
+
+`model="iid"` expresa efectos independientes con varianza común. La media posterior de $\alpha$ es 3.029 y su intervalo de credibilidad $[2.663,3.396]$. INLA informa precisiones; para interpretar desviaciones estándar hay que transformar las distribuciones, no solo las medias o modas, pues estas no son invariantes:
+
+```{r}
+invsqrt <- function(x) 1/sqrt(x)
+prec.site <- imod$marginals.hyperpar[["Precision for site"]]
+prec.epsilon <- imod$marginals.hyperpar[[
+  "Precision for the Gaussian observations"
+]]
+c(
+  epsilon = inla.emarginal(invsqrt, prec.epsilon),
+  site = inla.emarginal(invsqrt, prec.site)
+)
+bri.hyperpar.summary(imod)
+```
+
+Las medias posteriores son aproximadamente 0.291 y 0.313; las modas, 0.267 y 0.222. La asimetría explica la diferencia. `inla.contrib.sd(imod)$hyper` también puede obtener resúmenes por muestreo.
+
+El coeficiente de correlación intraclase
+
+$$
+\rho=\frac{\sigma_u^2}{\sigma_u^2+\sigma_\varepsilon^2}
+$$
+
+mide la variación entre grupos respecto de la total. Puede muestrearse de la posterior conjunta:
+
+```{r}
+sampvars <- 1/inla.hyperpar.sample(1000, imod)
+sampicc <- sampvars[, 2]/rowSums(sampvars)
+quantile(sampicc, c(.025, .5, .975))
+```
+
+La mediana es 0.493 y el intervalo $(0.097,0.891)$, amplio debido a que solo hay tres sitios. El muestreo posterior de INLA es rápido y produce observaciones independientes; no es una cadena MCMC.
+
+Las posteriores muestran un intercepto aproximadamente normal y componentes de escala asimétricos. La posterior de $\sigma_u$ está separada de cero: existe variación entre sitios. Como las dos escalas son semejantes, la diferencia entre sitios es comparable a la variación entre muestras del mismo sitio.
+
+### Elección de previas
+
+Las previas predeterminadas son: previa impropia plana para el intercepto, $N(0,\infty)$; $N(0,1000)$ para otros efectos fijos; y gamma con forma 1 y tasa $10^{-5}$ para las precisiones transformadas. La previa de un coeficiente puede dejar de ser difusa si los predictores tienen escalas extremas; entonces conviene estandarizar o modificarla.
+
+La previa de $\sigma_\varepsilon^2$ suele importar menos porque cada observación aporta información. La de $\sigma_u^2$ puede dominar cuando hay pocos grupos. Las previas de complejidad penalizada (PC) [@simpson2017] colocan una exponencial sobre la desviación estándar, dan mayor peso al modelo simple $\sigma_u=0$ y requieren calibración. Se eligen $U,p$ tales que $P(\sigma_u>U)=p$. Una elección débilmente informativa es $p=0.01$ y $U=3\operatorname{SD}(y)$:
+
+```{r}
+sdres <- sd(reeds$nitrogen)
+pcprior <- list(
+  prec = list(prior = "pc.prec", param = c(3 * sdres, .01))
+)
+pmod <- inla(
+  nitrogen ~ f(site, model = "iid", hyper = pcprior),
+  family = "gaussian", data = reeds
+)
+bri.hyperpar.summary(pmod)
+```
+
+El error apenas cambia, pero la media posterior de la escala entre sitios sube a 0.466. También puede definirse una media Cauchy para $\sigma_u>0$ mediante una expresión `muparser`. Con escala calibrada por $P(\sigma_u>3\operatorname{SD}(y))=.01$, sus resultados —media 0.423— son comparables a la PC.
+
+No existe una previa inequívocamente mejor. Intercepto y error son poco sensibles, pero el efecto de sitio no: estimar una desviación con tres grupos implica gran incertidumbre. El libro prefiere PC porque se apoya en información de escala y en una preferencia explícita por el modelo sencillo; la media Cauchy es una alternativa defendible.
+
+### Efectos aleatorios
+
+Las marginales de $u_A,u_B,u_C$ están en `pmod$marginals.random$site` y muestran el orden $B<A<C$, con algo de solapamiento. Para calcular correctamente $P(u_C>u_A)$ debe respetarse su correlación conjunta:
+
+```{r}
+pmod <- inla(
+  nitrogen ~ f(site, model = "iid", hyper = pcprior),
+  family = "gaussian", data = reeds,
+  control.compute = list(config = TRUE)
+)
+psamp <- inla.posterior.sample(1000, pmod)
+lvsamp <- t(sapply(psamp, function(x) x$latent))
+colnames(lvsamp) <- row.names(psamp[[1]]$latent)
+mean(lvsamp[, "site:C"] > lvsamp[, "site:A"])
+```
+
+La probabilidad es 0.987. Es mayor de lo que sugeriría comparar marginales independientes porque los efectos posteriores están positivamente correlacionados.
+
+## Datos longitudinales
+
+Los datos longitudinales miden individuos en varios momentos. Las observaciones de una persona no son independientes y pueden compartir variación no explicada. @singer2003 presenta puntuaciones PIAT de lectura de 89 niños a los 6.5, 8.5 y 10.5 años. Las puntuaciones crecen; quien comienza alto tiende a seguir alto.
+
+### Intercepto aleatorio
+
+El modelo más sencillo es
+
+$$
+y_{ij}=\beta_0+\beta_1t_j+u_i+\varepsilon_{ij},qquad
+u_i\sim N(0,\sigma_u^2).
+$$
+
+```{r}
+data(reading, package = "brinla")
+formula <- piat ~ agegrp + f(id, model = "iid")
+imod <- inla(formula, family = "gaussian", data = reading)
+imod$summary.fixed
+bri.hyperpar.summary(imod)
+```
+
+La media posterior del intercepto es -11.535 y la pendiente 5.031: la puntuación crece unos cinco puntos por año. Las escalas posteriores son $\sigma_\varepsilon=6.71$ y $\sigma_u=5.30$, próximas a `lmer()`. La variación entre estudiantes en un momento es comparable a la mejora esperada en un año. Los 89 efectos individuales tienen media cero; aproximadamente la mitad están entre -3 y 3, mientras uno alcanza 14.
+
+### Pendiente e intercepto aleatorios
+
+Las pendientes también varían:
+
+$$
+y_{ij}=\beta_0+\beta_1t_j+u_{0i}+u_{1i}t_j+\varepsilon_{ij},
+$$
+
+con $(u_{0i},u_{1i})$ normal bivariante. Centramos la edad en 8.5 para que el intercepto sea significativo. INLA requiere índices separados y `iid2d`:
+
+```{r}
+reading$cagegrp <- reading$agegrp - 8.5
+nid <- nlevels(reading$id)
+reading$numid <- as.numeric(reading$id)
+reading$slopeid <- reading$numid + nid
+formula <- piat ~ cagegrp +
+  f(numid, model = "iid2d", n = 2 * nid) +
+  f(slopeid, cagegrp, copy = "numid")
+imod <- inla(formula, family = "gaussian", data = reading)
+```
+
+`copy` induce correlación, no igualdad. Las medias fijas son 31.224 a los 8.5 años y 5.031 puntos por año. Las escalas posteriores son 5.51 para el error, 5.69 para interceptos y 1.92 para pendientes. La correlación intercepto--pendiente tiene media 0.944 e intervalo $(0.815,0.987)$: estudiantes inicialmente fuertes mejoran más en escala absoluta.
+
+Al modelar `log(piat)`, la correlación tiene media 0.059 e intervalo $(-0.162,0.276)$. En términos relativos, los estudiantes fuertes mantienen aproximadamente su ventaja; no hay evidencia de que esta aumente.
+
+### Predicción
+
+Para un nuevo estudiante con puntuaciones 18 y 25 a los 6.5 y 8.5 años, añadimos la respuesta faltante a los 10.5:
+
+```{r}
+reading$id <- as.numeric(reading$id)
+newsub <- data.frame(
+  id = 90, agegrp = c(6.5, 8.5, 10.5),
+  piat = c(18, 25, NA)
+)
+nreading <- rbind(reading, newsub)
+imod <- inla(
+  piat ~ agegrp + f(id, model = "iid"),
+  family = "gaussian", data = nreading,
+  control.predictor = list(compute = TRUE)
+)
+pm90 <- imod$marginals.fitted.values[[270]]
+```
+
+La predictiva del predictor queda por debajo de la media general esperada cercana a 41 y es más concentrada que la de un estudiante sin mediciones previas. Esta distribución solo incorpora incertidumbre del predictor. Para una nueva observación hay que sumar un nuevo error:
+
+```{r}
+nsamp <- 10000
+randprec <- inla.hyperpar.sample(nsamp, imod)[, 1]
+neweps <- rnorm(nsamp, 0, 1/sqrt(randprec))
+newobs <- inla.rmarginal(nsamp, pm90) + neweps
+density(newobs)
+```
+
+La predictiva observacional es más dispersa. No es exactamente normal porque la desviación del nuevo error también es aleatoria.
+
+## Modelo clásico con matriz Z
+
+La representación de Henderson
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\mathbf Z\mathbf u+\boldsymbol\varepsilon \qquad\text{(5.2)}
+$$
+
+puede especificarse directamente. `lme4` ayuda a construir matrices:
+
+```{r}
+mmod <- lmer(nitrogen ~ 1 + (1 | site), reeds)
+Z <- getME(mmod, "Z")
+X <- getME(mmod, "X")
+n <- nrow(reeds)
+formula <- y ~ -1 + X + f(id.z, model = "z", Z = Z)
+imodZ <- inla(
+  formula,
+  data = list(y = reeds$nitrogen, id.z = 1:n, X = X)
+)
+```
+
+El resultado reproduce el análisis anterior. En general $\mathbf u\sim N(0,\tau^{-1}\mathbf C)$ para una matriz fija $\mathbf C$. Esta formulación admite una sola precisión para el bloque y no puede reproducir sin más la pendiente e intercepto aleatorios correlacionados, pero habilita otras aplicaciones.
+
+### Regresión ridge revisitada
+
+Con predictores colineales, ridge minimiza
+
+$$
+(\mathbf y-\mathbf Z\mathbf u)^T(\mathbf y-\mathbf Z\mathbf u)
++\lambda\sum_j u_j^2.
+$$
+
+El equivalente bayesiano usa $\mathbf u\sim N(0,\sigma_u^2\mathbf I)$ y $\boldsymbol\varepsilon\sim N(0,\sigma_\varepsilon^2\mathbf I)$, con $\lambda=\sigma_\varepsilon^2/\sigma_u^2$.
+
+En `meatspec`, 215 muestras de carne poseen contenido graso y absorbancias en 100 longitudes de onda. Usamos 172 para entrenamiento y 43 para prueba. Una regresión ordinaria obtiene RMSE 3.814 y coeficientes extremadamente inestables. El modelo `z`, escalando la respuesta por 100 y dejando las 43 respuestas como `NA`, produce distribuciones predictivas:
+
+```{r}
+data(meatspec, package = "brinla")
+n <- nrow(meatspec)
+X <- matrix(1, n, 1)
+Z <- as.matrix(meatspec[, -101])
+y <- meatspec$fat
+y[173:215] <- NA
+formula <- y ~ -1 + X + f(idx.Z, model = "z", Z = Z)
+zmod <- inla(
+  formula,
+  data = list(y = y/100, idx.Z = 1:n, X = X),
+  control.predictor = list(compute = TRUE)
+)
+```
+
+El RMSE de prueba baja a 1.903 y los coeficientes se vuelven suaves respecto de la longitud de onda. Una formulación alternativa define $\boldsymbol\eta=\mathbf A\boldsymbol\eta'$ con $\mathbf A=[\mathbf X:\mathbf Z]$ mediante `control.predictor=list(A=cbind(X,Z))`; obtiene RMSE 1.902. Estas formulaciones estiman dentro del modelo la intensidad de contracción, a diferencia de fijar directamente previas informativas para cada coeficiente.
+
+## Modelos lineales generalizados mixtos
+
+Un GLMM combina una respuesta de familia exponencial con efectos aleatorios:
+
+$$
+g(\boldsymbol\mu)=\boldsymbol\eta
+=\mathbf X\boldsymbol\beta+\mathbf Z\mathbf u.
+$$
+
+Previas gaussianas para $\boldsymbol\beta$ y $\mathbf u$ lo convierten en un LGM apto para INLA. Los GLMM pueden ser difíciles para máxima verosimilitud; el enfoque bayesiano a veces encuentra soluciones cuando la optimización pura no.
+
+## GLMM Poisson
+
+Un estudio de Nitrofen asignó 50 pulgas de agua a cinco concentraciones del herbicida y contó crías vivas en tres puestas. El número de crías de una misma pulga está correlacionado. Un modelo natural es
+
+$$
+Y_i\sim\operatorname{Poisson}(e^{\eta_i}),\qquad
+\eta_i=\mathbf x_i^T\boldsymbol\beta+u_j,
+$$
+
+donde $u_j$ representa la pulga. El patrón exploratorio sugiere interacción entre concentración y puesta.
+
+```{r}
+data(nitrofen, package = "boot")
+library(dplyr)
+library(tidyr)
+lnitrofen <- nitrofen |>
+  select(-total) |>
+  mutate(id = row_number()) |>
+  pivot_longer(starts_with("brood"),
+               names_to = "brood", values_to = "live") |>
+  arrange(id)
+lnitrofen$brood <- factor(lnitrofen$brood, labels = 1:3)
+
+formula <- live ~ I(conc/300) * brood + f(id, model = "iid")
+imod <- inla(formula, family = "poisson", data = lnitrofen)
+```
+
+Dividir concentración por 300 evita problemas de escala. Las medias posteriores son -0.041 para la pendiente de la primera puesta, 1.164 y 1.346 para los niveles iniciales de las puestas 2 y 3, y -1.664 y -1.821 para sus interacciones. La primera pendiente incluye cero; las otras dos son claramente negativas. Exponenciando, las puestas 2 y 3 producen inicialmente 3.20 y 3.84 veces más crías, pero caen más de 80 % al aumentar la concentración. La escala individual tiene media 0.294: una pulga típica multiplica la tasa aproximadamente por 1.3 o su inversa.
+
+El predictor lineal en concentración tiene DIC 785.90 frente a 841.97 para `log(conc+1)`, por lo que se conserva. Un Q--Q de efectos individuales no detecta pulgas especialmente anómalas. CPO identifica como caso más improbable una pulga a concentración 310 con 10 crías en la segunda puesta; las otras nueve tienen cero. PIT señala el mismo caso y muestra que los extremos tienden a tener más crías de las esperadas. `cpo$failure` es cero; cuando no lo sea debe usarse `inla.cpo()`.
+
+Una previa PC calibrada alrededor de una desviación 0.3 produce casi la misma posterior; con 50 individuos el resultado es poco sensible. Añadir un efecto iid por observación para sobredispersión da escala 0.010 frente a 0.294 para pulga, por lo que la sobredispersión adicional es despreciable.
+
+## GLMM binomial
+
+Los datos `ohio` siguen 537 niños de 7 a 10 años durante cuatro años. La respuesta indica sibilancias y `smoke` si la madre fuma. Hay cuatro respuestas correlacionadas por niño. Usamos
+
+$$
+\operatorname{logit}P(Y_{ij}=1)
+=\beta_0+\beta_1\operatorname{age}_{ij}+\beta_2\operatorname{smoke}_i+u_i.
+$$
+
+```{r}
+data(ohio, package = "brinla")
+formula <- resp ~ age + smoke + f(id, model = "iid")
+imod <- inla(formula, family = "binomial", data = ohio)
+imod$summary.fixed
+bri.hyperpar.summary(imod)
+```
+
+Las medias son -2.993, -0.167 y 0.391. Un año adicional multiplica los *odds* por 0.847, reducción cercana a 15 %, con intervalo completamente bajo uno. Una madre fumadora los multiplica por 1.478, pero su intervalo $(0.925,2.371)$ incluye uno: no podemos asegurar aumento, aunque uno tan grande como 137 % sigue siendo plausible. La asociación no prueba causalidad.
+
+La escala individual tiene media 1.926, que en *odds* representa un factor cercano a 7. El efecto es fuerte: 355 niños nunca presentan sibilancias, mientras 18 lo hacen en los cuatro momentos. La probabilidad posterior de que el coeficiente de tabaco sea negativo es
+
+```{r}
+inla.pmarginal(0, imod$marginals.fixed$smoke)
+```
+
+igual a 0.0513. No es un valor $p$: expresa directamente $P(\beta_{smoke}<0\mid y)$.
+
+La edad lineal ajusta mal las ocho proporciones observadas. Comparando modelos lineal, edad como factor y edad por tabaco, los DIC son 1466.2, 1463.1 y 1463.4; WAIC, 1418.9, 1416.2 y 1417.6. Se prefiere edad como factor sin interacción. Respecto de los 7 años, a los 10 los *odds* caen aproximadamente 42 %; los 8 y 9 años cambian poco.
+
+Podemos permitir que el efecto individual evolucione mediante AR(1), replicado por niño:
+
+```{r}
+ohio$obst <- rep(1:4, 537)
+ohio$repl <- ohio$id + 1
+formula <- resp ~ factor(age) + smoke +
+  f(obst, model = "ar1", replicate = repl)
+imod <- inla(formula, family = "binomial", data = ohio)
+```
+
+Los efectos fijos apenas cambian. La escala es 1.972 y $\rho$ tiene media 0.985 e intervalo $(0.946,0.999)$: la salud pulmonar subyacente de un niño se mantiene bastante constante durante los cuatro años.
+
+### Mejora de la aproximación
+
+INLA puede ser inexacto en datos binarios escasos. La corrección basada en cópulas de @ferkingstad2015 se activa así:
+
+```{r}
+cmod <- inla(
+  resp ~ age + smoke + f(id, model = "iid"),
+  family = "binomial", data = ohio,
+  control.inla = list(correct = TRUE)
+)
+```
+
+Los efectos fijos cambian poco, pero la escala individual pasa de aproximadamente 1.93 a 2.06. La corrección casi no cuesta tiempo y tiende a mejorar GLMM, especialmente binarios; se recomienda para todos los GLMM, aunque aporta poco en casos fáciles como el Poisson anterior.
+
