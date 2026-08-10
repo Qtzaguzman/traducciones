@@ -1,0 +1,76 @@
+# El Modelo Matérn en Estadística Computacional {#Sec4}
+
+Esta sección explora la interacción del modelo Matérn con las estadísticas computacionales, comenzando con métodos numéricos para *implementación* del modelo Matérn (Secciones [4.1](#SecSDE), [4.2](#SecSPDE) y [4.3]), y luego pasando a los usos del modelo Matérn para *facilitar* el cálculo numérico en sí (Sección [4.4](#SecQua)).
+
+## Implementación como SDE {#SecSDE}
+
+El modelo de Matérn admite una representación en *espacio de estados* como un SDE, lo que permite emplear técnicas computacionales eficientes de la literatura sobre procesamiento de señales para simulación, estimación y predicción. En efecto, centrándose en la dimensión $d=1$ , y dejando
+
+$$
+\mathbf{Z}(x) = (Z,\mathrm{d}Z/\mathrm{d}x,\dots,\mathrm{d}^k Z/\mathrm{d}x^k) ,
+$$
+
+el modelo Matérn $\mathcal{M}_{\nu,\alpha}$ con $\nu = k + 1/2$ admite la caracterización
+
+$$
+\begin{aligned}
+ \mathrm{d}\mathbf{Z} = \left( \begin{array}{cccc} 0 & 1 & & \\ & \vdots & \vdots & \\ & & 0 & 1 \\ - a_0 & - a_1 & \dots & - a_{k-1} \end{array} \right) \mathbf{Z} \; \mathrm{d}x + \left( \begin{array}{c} 0 \\ \vdots \\ 0 \\ 1 \end{array} \right) \mathrm{d}\mathcal{W}
+\end{aligned}
+$$
+
+dónde $a_i = {}_{k+1}\text{C}_i \cdot \alpha^{-k-1+i}$ , el ${}_\cdot\text{C}_\cdot$ son coeficientes binomiales, y $\mathcal{W}(x)$ representa un proceso de ruido blanco de media cero en $x \in \mathbb{R}$ [73]. La ventaja de las formulaciones de espacio de estados es que tanto la estimación como la predicción se pueden realizar en un *único paso* a través de los datos, en niveles lineales. $O(n)$ costo, utilizando ecuaciones de actualización familiares de Kalman como se describe en[135]y con más detalle en el Capítulo 6 de[75]. Se pueden encontrar caracterizaciones similares para dimensiones superiores, incluidas versiones espacio-temporales del modelo Matérn, en[135], aunque observamos que estos conservan la complejidad lineal sólo en el número de pasos de tiempo; la complejidad es cúbica en el tamaño de la cuadrícula espacial. El enfoque SPDE puede ofrecer una solución a este respecto, y lo analizamos a continuación.
+
+## Implementación como SPDE {#SecSPDE}
+
+Una de las principales razones de la continua popularidad del modelo Matérn es la disponibilidad de métodos numéricos eficientes y escalables para la simulación, debido en gran parte a [102]. Estos autores consideran la SPDE
+
+$$
+\label{SPDE}
+(\alpha^{-2} -\Delta )^{\gamma/2} Z(\boldsymbol{x}) = {\cal W}(\boldsymbol{x}), \qquad \boldsymbol{x} \in \mathbb{R}^d,
+$$
+
+dónde $\alpha>0$ , $\Delta$ es el laplaciano, y ${\cal W}$ es un ruido blanco gaussiano en $\mathbb{R}^d$ , de modo que $\text{Cov}\left ( {\cal W}(A_1),{\cal W}(A_2) \right )= |A_1 \cap A_2|$ , dónde $A_i$ son subconjuntos de $\mathbb{R}^d$ , $i=1,2$ y donde $|\cdot|$ es la integral de volumen.[167]y[168]demostró que la solución a [SPDE\] es un campo gaussiano con covarianza Matérn $\sigma^2 \mathcal{M}_{\nu,\alpha}$ con parametros $\alpha$ (como antes) y
+
+$$
+\sigma^2 = \frac{\Gamma(\nu) \alpha^{2 \nu}}{\Gamma(\nu + d/2) (4 \pi)^{d/2}} , \qquad \nu=\gamma-d/2 .
+$$
+
+Esta perspectiva ofrece dos ideas; En primer lugar, las herramientas desarrolladas para la aproximación numérica de las SPDE pueden aplicarse al modelo de Matérn y, en segundo lugar, existe un camino claro para generalizar la definición del modelo de Matérn a cualquier variedad (planar o no plana) en la que se pueda definir la SPDE análoga. (Por ejemplo,[78]tomar esta perspectiva para generalizar el modelo de Matérn al ámbito $\mathbb{S}^d$ .)
+
+Para proporcionar una aproximación computacionalmente conveniente a ([SPDE\]), [102] consideró la solución débil a ([SPDE\]) y la aproximación de la solución débil utilizando funciones básicas con soporte compacto sobre un dominio compacto $\Omega \subset \mathbb{R}^d$ (específicamente, se utilizó una aproximación *Galerkin* usando funciones de base de elementos finitos). Como resultado, los autores establecen una ruta formal para la aproximación del campo aleatorio $Z$ con un campo aleatorio *Gauss--Markov* que tiene una matriz de precisión *dispersa*. El álgebra matricial dispersa permite una simulación rápida de realizaciones del campo aleatorio de Matérn y una evaluación rápida de la probabilidad [eq:17\] (aunque no una evaluación rápida del gradiente de probabilidad).
+
+La elección del dominio $\Omega$ introduce efectos de límite que deben mitigarse cuidadosamente. [87] [37] proporciona una solución para el caso en el que $\gamma$ es un número entero; el caso no entero se considera en [30]. La extensión del campo Matérn basado en SPDE al espacio-tiempo la proporciona [39] y posteriormente [15] [42], mientras que el caso multivariado de Matérn se ha explorado en [33]. [92] ha proporcionado aproximaciones alternativas basadas en los métodos de Galerkin en variedades. [121] propone un enfoque interesante que permite trabajar en variedades con grandes conjuntos de datos. El interés por esta literatura es dual. Por un lado, los aspectos técnicos relacionados con la representación en dimensión finita de campos aleatorios gaussianos son extremadamente interesantes *per se*. Por otro lado, este grupo de autores en realidad está motivado por proporcionar herramientas para una computación eficiente. Esto lo atestiguan los paquetes existentes relevantes (R-INLA, inlabru y rSPDE, por ejemplo) y nos remitimos a la revisión de [101].
+
+[133] intenta explicar el equilibrio entre precisión y escalabilidad en la aproximación numérica del modelo Matérn. Recuerde que, en el enfoque SPDE [102], $Z$ en ([SPDE\]) se aproxima numéricamente utilizando un proceso gaussiano
+
+$$
+\label{delta}
+Z_{\delta}(\boldsymbol{x})= \sum_{k=1}^{n_{\delta}} \omega_k \epsilon_k(\boldsymbol{x}), \qquad \boldsymbol{x} \in \Omega,
+$$
+
+dónde $\epsilon_k$ son funciones de base de elementos finitos y el vector $\boldsymbol{\omega}=(\omega_1, \ldots, \omega_{n_{\delta}})^{\top}$ es gaussiano multivariado con media cero y con una matriz de precisión dispersa. La precisión de la aproximación. $Z_\delta$ depende de (a) el soporte compacto de las funciones de base de elementos finitos, (b) los efectos de frontera debidos al dominio $\Omega$ , y (c) por el ancho de malla $\delta$ que determina la cardinalidad $n_{\delta}$ en ([delta\]). La mayor parte de la literatura anterior ha considerado ([delta\]) con $n_{\delta}$ proporcional al tamaño de la muestra $n$ del conjunto de datos que se está modelando.[133]adoptar un enfoque asintótico de dominio fijo para explicar cuándo $n_{\delta} \ll n$ podría ser una estrategia legítima. Para ello, consideran la regresión del proceso gaussiano y trabajan bajo el marco de tasas de contracción bayesianas. Sus resultados justifican escalas específicas de $n_\delta$ con $n_\delta = o(n)$ , siempre que la suavidad $\nu$ es suficientemente alto.
+
+Recientemente se tomó un camino diferente hacia los campos aleatorios SPDE y Gauss-Markov en [134], que adopta discretizaciones de SPDE basadas en gráficos. Este enfoque puede resultar adecuado para trabajar con nubes de puntos discretas y no estructuradas, como en tareas de aprendizaje automático donde los datos pertenecen a una variedad de baja dimensión definida implícitamente. Una segunda ventaja de este enfoque es que no se requiere una triangulación explícita del dominio.
+
+## Verosimilitud aproximada y el Modelo Matérn {#approx-like}
+
+Al estimar los parámetros del modelo Matérn usando ML [eq: max like\], se requiere optimización numérica. Aunque se pueden utilizar rutinas de optimización genéricas, un enfoque a menudo mejor es construir primero una aproximación precisa pero barata a la probabilidad, que luego puede maximizarse más fácilmente. De hecho, las probabilidades aproximadas son esenciales cuando se trata de grandes conjuntos de datos, ya que la evaluación de ([eq:17\]) requiere calcular la inversa y el determinante de la matriz de correlación, generalmente mediante la descomposición de Cholesky con complejidad $O(n^3)$ y costo de almacenamiento $O(n^2)$ .
+
+Quizás la aproximación más exitosa sea el *método de Vecchia* [163], que ha atraído una notable atención en los últimos tiempos [inc. [147]; 48; 49; 67; 47]. La aproximación de Vecchia se puede utilizar con cualquier modelo de correlación y su idea básica es reemplazar ([eq:17\]) con un producto de distribuciones condicionales gaussianas, en las que cada distribución condicional involucra solo un pequeño subconjunto de datos. Esta aproximación requiere que los datos estén *ordenados* y que se especifique el número $m$ de datos 'anteriores' sobre los cuales condicionar. Generalmente, un $m$ más grande implica una aproximación más precisa y computacionalmente costosa, mientras que la elección del orden afecta la precisión de la aproximación [67]. El método Vecchia proporciona una aproximación dispersa al factor de Cholesky de la matriz de precisión, de modo que la probabilidad aproximada se puede calcular en tiempo $O(nm^3)$ y con costo de almacenamiento $O(nm^2)$ . Consulte la revisión reciente de [83] para obtener más detalles. La verosimilitud de Vecchia puede verse como un ejemplo específico de una clase más general de métodos de estimación llamados verosimilitud cuasi o compuesta [103; 162] que se han utilizado ampliamente para la estimación de campos gaussianos con el modelo de Matérn [52; 26; 13].
+
+Un método alternativo para mitigar la carga computacional de la estimación de ML es la *reducción gradual de la covarianza* [59]. La idea básica es multiplicar el modelo de Matérn con una función de correlación con soporte compacto, lo que da como resultado un modelo de Matérn "modificado" con soporte compacto. Esto induce dispersidad en la matriz de covarianza asociada, de modo que los algoritmos para matrices dispersas pueden explotarse para una evaluación computacionalmente eficiente de la descomposición de Cholesky [59]. Sin embargo, algunos autores [25; 23] sugieren que el tapering podría ser un enfoque obsoleto en vista de que recientemente se han propuesto modelos flexibles con soporte compacto que incluyen el modelo Matérn como caso especial; consulte la sección [8](#sec7). Una revisión exhaustiva de las aproximaciones de probabilidad está fuera del alcance de este documento, por lo que remitimos al lector a [154] y [74] para obtener más detalles.
+
+## El modelo Matérn *para* computación bayesiana {#SecQua}
+
+En la última década ha habido un interés creciente en el uso de métodos núcleo para resolver PDE. Considere un sistema
+
+$$
+\begin{aligned}
+\mathcal{A} u & = f \qquad \text{en } \Omega \\
+\mathcal{B} u & = g \qquad \text{sobre } \partial\Omega
+\end{aligned}
+$$
+
+especificado por una ecuación diferencial que involucra $\mathcal{A}$ y $f$ , y condiciones iniciales o de contorno especificadas por $\mathcal{B}$ y $g$ . Se remonta al menos a[57]en el contexto determinista, y reinterpretado a través de una lente bayesiana por autores como[43], se puede buscar una aproximación a la solución fuerte $u : \Omega \rightarrow \mathbb{R}$ modelando $u$ como *a priori* un campo aleatorio gaussiano y condicionando ese campo para satisfacer la ecuación diferencial en ubicaciones $\{\boldsymbol{x}_1,\dots,\boldsymbol{x}_m\} \subset \Omega$ y satisfacer las condiciones de contorno en ubicaciones $\{\boldsymbol{x}_{m+1},\dots,\boldsymbol{x}_n\} \subset \partial \Omega$ . La media condicional de este proceso coincide con el método de *colocación simétrica* introducido por[57], a la que volvemos en la Sección [6.1](#SecNAaAT), mientras que la varianza condicional proporciona una cuantificación probabilística de la incertidumbre para la solución, expresando la incertidumbre que queda como resultado de usar solo un presupuesto computacional finito. Para implementar estos métodos, se requiere un proceso gaussiano cuyas trayectorias de muestra posean suficiente regularidad para la operación de condicionamiento en la derivada. $\mathcal{A}u$ estar bien definido. Por otro lado, asumir una suavidad excesiva podría llevar a una cuantificación de la incertidumbre excesivamente confiada. Por lo tanto, se requiere un núcleo con suavidad personalizable, que pueda adaptarse a la ecuación diferencial en cuestión. La clase Matérn satisface este requisito, pero no es la única que lo hace; Continuamos la discusión de este punto en la Sección [7](#surr).
+
+Una PDE específica que ha recibido considerable atención recientemente en la comunidad estadística bayesiana es la *ecuación de Stein*, para la cual $\mathcal{A}u = c + p^{-1} \nabla \cdot (p \nabla u)$ , donde $p$ es la función de densidad de probabilidad de una distribución posterior de interés, $f$ es una función cuya expectativa posterior buscamos calcular y $c$ es una constante. Si la ecuación de Stein tiene solución, entonces $c$ *debe* ser el valor de la expectativa posterior que buscamos. Esto ha motivado varios esfuerzos para resolver numéricamente la ecuación de Stein, como una alternativa más directa a aproximar primero $p$ (por ejemplo usando la cadena de Markov Monte Carlo) y luego usar la aproximación de $p$ para aproximar la expectativa de interés. En este contexto, los métodos del núcleo se usan típicamente [117; 145] y, en particular, el núcleo debe tener una suavidad dos órdenes mayor que la de la función $f$ cuya expectativa es de interés, ya que la ecuación de Stein es una PDE de segundo orden. La generalización de la ecuación de Stein a variedades de Riemann se consideró en [19], quien abogó por el uso de núcleos con suavidad personalizable que reproducen espacios de funciones de Sobolev en la variedad, como la (generalización múltiple del) modelo Matérn. La conexión entre el modelo Matérn y los espacios de Sobolev se establece en el apartado [6.1](#SecNAaAT).

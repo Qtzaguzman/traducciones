@@ -1,0 +1,101 @@
+# Introducción {#sec1}
+
+Este artículo tiene dos propósitos: por un lado, proporcionar una visión panorámica, a través de varias disciplinas, del modelo Matérn. Por otro lado, el artículo ofrece críticas constructivas sobre el papel del modelo Matérn en varias disciplinas, al tiempo que analiza modelos alternativos o más generales y su relevancia para muchos aspectos del modelado estadístico, la estimación, la predicción, la estadística computacional, el análisis numérico y el aprendizaje automático.
+
+[70] proporciona un relato histórico del modelo Matérn. El modelo Matérn, también llamado Matérn *función de covarianza*, o Matérn *núcleo*, según el contexto, se atribuye comúnmente a [108], pero se puede encontrar con nombres alternativos en diferentes ramas de la literatura científica. El uso del modelo Matérn está muy extendido y es imposible abarcar aquí todas sus diversas aplicaciones; Nuestra revisión se centra en una selección de aplicaciones que son de especial interés e importancia. En concreto, pretendemos cubrir
+
+**1.** estimación y predicción utilizando el modelo de Matérn en estadística, con énfasis en la estimación de máxima verosimilitud, la predicción kriging y el efecto de apantallamiento asociado;
+
+**2.** Aplicaciones del modelo Matérn en
+
+**1.** estadística computacional, incluidos los enfoques de ecuaciones diferenciales estocásticas (SDE) y ecuaciones diferenciales parciales estocásticas (SPDE), aproximación de verosimilitud, inferencia de ecuaciones diferenciales parciales (PDE) y método de Stein;
+
+**2.** modelización estadística, incluidos escenarios no estándar, por ejemplo cuando no se pueden asumir la isotropía y la estacionariedad, o para modelar direcciones y curvas;
+
+**3.** teoría de aproximación y análisis numérico, donde se utiliza el modelo de Matérn para construir interpolantes basados ​​en núcleo;
+
+**4.** aprendizaje automático, donde el modelo de Matérn es central en la literatura sobre modelado de procesos gaussianos; y
+
+**5.** teoría de la probabilidad, donde el modelo de Matérn ha inspirado varias contribuciones basadas en propiedades de las trayectorias muestrales de procesos estocásticos asociados, en conjunto con la solución de ciertas clases de ecuaciones diferenciales estocásticas;
+
+**3.** comparación con alternativas flexibles recientes al modelo Matérn, centrándose en
+
+**1.** modelos mejorados con características interesantes, como soporte compacto o decaimiento polinómico;
+
+**2.** precisión de la estimación asintótica, predicción mal especificada y efectos de apantallamiento;
+
+**3.** las implicaciones del uso de ciertas clases de núcleos con soporte compacto dentro de la teoría de la aproximación, la estadística computacional y el aprendizaje automático.
+
+Este artículo es novedoso por ser el primero en adoptar una visión amplia de la literatura científica a través del lente del modelo Matérn. En particular, *no* intentamos una revisión de las funciones de covarianza en general. Revisiones recientes proporcionan un panorama bastante exhaustivo de los modelos de covarianza, desde el espacio al espacio-tiempo [126], hasta las funciones de covarianza multivariadas [60] y el modelado basado en covarianza en esferas y variedades [122]. Además, si bien existen muchas aplicaciones fascinantes del modelo de Matérn en el panorama científico, no podemos esperar hacerles justicia a todas. Por lo tanto, nuestro énfasis se limita a cuestiones metodológicas y teóricas que esperamos sean relevantes en una amplia gama de disciplinas en las que se utiliza el modelo Matérn.
+
+## Configuración y notación {#background}
+
+En todo momento, las letras en negrita se refieren a vectores y matrices, y el operador de transposición se indica como $\top$ . Sea $d \in \mathbb{N}$ y $Z=\{{Z}(\boldsymbol{x}), \; \boldsymbol{x} \in \mathbb{R}^d \}$ un campo aleatorio gaussiano de valor real, con media cero y *función de covarianza* ${K}: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}$ definida a través de $K(\boldsymbol{x},\boldsymbol{y}):=\mathrm{Cov}(Z(\boldsymbol{x}),Z(\boldsymbol{y}))$ . Las funciones de covarianza son simétricas y definidas positivas, donde en este artículo el término *definida positiva* se entiende como
+
+$$
+\label{posdef}
+\sum_{i=1}^n \sum_{j=1}^n {c}_i {K}(\boldsymbol{x}_i, \boldsymbol{x}_j) {c}_j \geq 0
+$$
+
+para todo ${c}_i \in \mathbb{R}$ , todo $n \in \mathbb{N}$ y todo $\boldsymbol{x}_i \in \mathbb{R}^d$ . Si la desigualdad anterior es estricta, entonces ${K}$ se llamará definida estrictamente positiva.
+
+Cada función definida positiva simétrica ${K}: \mathbb{R}^d \times \mathbb{R}^d \to \mathbb{R}$ define las funciones *trasladadas* $K(\boldsymbol{x},\cdot)$ en $\mathbb{R}^d$ , para todos los $\boldsymbol{x}\in\mathbb{R}^d$ . Además, se puede definir un producto interno en dos funciones trasladadas por
+
+$$
+\label{eqHKKK}
+\langle K(\boldsymbol{x},\cdot), K(\boldsymbol{y},\cdot)\rangle_{\cal H(K)}
+:=K(\boldsymbol{x}, \boldsymbol{y}), \; \; \boldsymbol{x},\,\boldsymbol{y}\in \mathbb{R}^d ,
+$$
+
+en términos de $K$ sí mismo. Esto se extiende a todas las combinaciones lineales de traduce y *genera*, al completarse, un espacio de Hilbert $\cal H(K)$ de funciones en $\mathbb{R}^d$ . Este espacio se llama espacio *nativo* para $K$ . Observe que el espacio de Hilbert permite evaluaciones de puntos continuas. $\delta_{\boldsymbol x}\;:\;f\mapsto f({\boldsymbol x})$ via a *reproduction formula*
+
+$$
+\label{eqrepro}
+f({\boldsymbol x})=\langle f,K({\boldsymbol x},\cdot)\rangle_{{\cal H}(K)},\;{\boldsymbol x}\in \mathbb{R}^d,\; \; f\in {\cal H}(K)
+$$
+
+que se sigue de ([eqHKKK\]). Entonces ${\cal H}(K)$ se llama *núcleo reproductor del espacio de Hilbert (RKHS)* con *núcleo* $K$ . En particular, las funciones trasladadas $K({\boldsymbol x},\cdot)$ quedarse en cama ${\cal H}(K)$ , formando su finalización y siendo los representantes de Riesz de los funcionales delta $\delta_{\boldsymbol x}$ . Son fundamentales para el aprendizaje automático, el análisis numérico y la teoría de la aproximación, ya que ([eqHKKK\]) permite productos internos en el espacio abstracto. ${\cal H}(K)$ ser explícitamente computable usando el núcleo - el llamado *truco del núcleo*. Consulte la Sección [6.1](#SecNAaAT) y[166]para más detalles. Para un núcleo positivo definido y estacionario $K$ , its Fourier transform $\hat K$ se puede utilizar para refundir el producto interno ([eqHKKK\]) en el espacio de Hilbert ${\cal H}(K)$ por
+
+$$
+\label{eqHK}
+ \langle f,g\rangle_{{\cal H}(K)}=\int_{\mathbb{R}^d}\frac{\hat f(\boldsymbol{\omega})
+\overline{\hat g(\boldsymbol{\omega})}}{\hat K(\boldsymbol{\omega})}\mathrm{d}\boldsymbol{\omega},
+\; \; f,g\in {\cal H}(K),
+$$
+
+hasta un factor constante. Aquí, $\overline{g}$ denota el conjugado complejo de una función $g$ . Observe cómo el espectro de $K$ penaliza el espectro de las funciones en ${\cal H}(K)$ . Aproximadamente, el espacio de Hilbert ${\cal H}(K)$ consta de funciones $f$ para cual $\hat f/\sqrt{\hat K}$ es cuadrado integrable sobre $\mathbb{R}^d$ . Las sutiles conexiones del espacio de Hilbert ${\cal H}(K)$ para muestrear caminos de procesos gaussianos con función de covarianza $K$ Aparecerá en muchos lugares de este artículo, p. en las Secciones [2](#Sec2), [4.4](#SecQua), [6.3](#PTaSP) y [7.1](#sec-comp-sup). En este sentido, los núcleos son vínculos importantes entre los modelos deterministas y probabilísticos.
+
+Un núcleo definido estrictamente positivo $K$ se llama *estacionario* si $K(\boldsymbol{x},\boldsymbol{y}) \equiv K(\boldsymbol{x} - \boldsymbol{y})$ . Según el teorema de Bochner [28], $K$ es la transformada de Fourier de una medida positiva y acotada $F$ , es decir,
+
+$$
+K(\boldsymbol{x} - \boldsymbol{y}) = \int_{\mathbb{R}^{d}} \mathrm{e}^{\mathsf{i} \left( \boldsymbol{x} - \boldsymbol{y} \, , \, \boldsymbol{\omega} \right)} F (\mathrm{d} \boldsymbol{\omega}), \qquad \boldsymbol{x} , \boldsymbol{y} \in \mathbb{R}^d.
+$$
+
+Aquí, $(\cdot,\cdot)$ es el producto interno en $\mathbb{R}^d$ y $\mathsf{i}$ es el número complejo unitario. La inversión de Fourier es posible cuando $K$ es absolutamente integrable, en cuyo caso llamamos a la transformada de Fourier $\widehat{K}$ su *densidad espectral*. Observamos que $\widehat{K}$ es no negativa y es integrable. Además, la mayor parte del artículo supone estacionariedad e isotropía para la función de covarianza, $K$ , de modo que
+
+$$
+\label{covariance}
+\mathrm{Cov}(Z(\boldsymbol{x}),Z(\boldsymbol{y}))=K(\boldsymbol{x}-\boldsymbol{y})= \sigma^2 \varphi(\|\boldsymbol{x}-\boldsymbol{y}\|),
+$$
+
+para $\boldsymbol{x},\boldsymbol{y} \in \mathbb{R}^d$ y $\|\cdot\|$ que denota la distancia euclidiana. Aquí, suponemos $\varphi$ ser continuo con $\varphi(0)=1$ . En lo que sigue, llamaremos indistintamente $\varphi$ una *función* o una *función de correlación*, la última como atajo para $\varphi(\|\cdot\|)$ . Por tanto, el parámetro $\sigma^2>0$ es la varianza de $Z(\boldsymbol{x})$ , para todos $\boldsymbol{x}\in \mathbb{R}^d$ . Sea $\Phi_d$ denota la clase de tales funciones $\varphi$ que inducen una función de covarianza $K$ a través de la identidad ([\[covarianza\]](#covarianza)) $i.e.$ $\Phi_d$ es la clase de funciones de correlación isotrópica continua definida en $\mathbb{R}^d$ . Tales funciones tienen una representación integral precisa según[142], dado por
+
+$$
+\label{Schoenberg}
+ \varphi(x) = \int_{0}^{\infty} \Omega_d(rx) F_{d}(\mathrm{d} r), \qquad x \ge 0,
+$$
+
+con $F_d$ siendo una medida de probabilidad y
+
+$$
+\label{Omega0} \Omega_{d}(x) = \Gamma(d/2) \left ( \frac{2}{x}\right )^{d/2-1} J_{d/2-1}(x), \qquad x \ge 0,
+$$
+
+con $\Gamma(\cdot)$ la función gamma y $J_{\nu}$ la función de Bessel de primer tipo de orden $\nu>0$ [118 formula 10.2.2]. para un miembro $\varphi$ de la clase $\Phi_d$ , podemos usar que es $d$ -transformada de Fourier variable de $\varphi(\|\boldsymbol{x}-\boldsymbol{y}\|)$ es nuevamente isotrópico y, por lo tanto, reducible a una fórmula integral escalar
+
+$$
+\label{FT}
+ \widehat{\varphi}(z)= \frac{z^{1-d/2}}{(2 \pi)^{d/2}} \int_{0}^{\infty} u^{d/2} J_{d/2-1}(uz) \varphi(u) \mathrm{d} u, \; z \ge 0,
+$$
+
+lo que define su $d$ -variar *densidad espectral isotrópica*, y asumimos que esta integral existe. Si el denominador $(2 \pi)^{d/2}$ se omite, la misma fórmula es válida para la transformada radial inversa de Fourier. A lo largo, escribimos $\Phi_{\infty}$ para $\bigcap_{d \ge 1} \Phi_d$ , la clase de funciones $\varphi$ induciendo funciones radiales definidas positivas en cada $d$ -dimensional espacio euclidiano. Por tanto, $\varphi\in\Phi_d$ si y solo si $\varphi(\|\cdot\|)$ es una función de correlación en $\mathbb{R}^d$ .

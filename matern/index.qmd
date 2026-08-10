@@ -1,0 +1,14 @@
+# Presentación {.unnumbered}
+
+Esta es la traducción íntegra al español de *The Matérn Model: A Journey through Statistics, Numerical Analysis and Machine Learning*, de Emilio Porcu, Moreno Bevilacqua, Robert Schaback y Chris J. Oates.
+
+## Resumen {.unnumbered}
+
+El modelo Matérn ha sido una piedra angular de la estadística espacial durante más de medio siglo. Más recientemente, ha ocupado un lugar central en disciplinas tan diversas como el análisis numérico, la teoría de la aproximación, la estadística computacional, el aprendizaje automático y la teoría de la probabilidad. En este artículo emprendemos un recorrido por estas disciplinas basado en el modelo Matérn. Primero reflexionamos sobre su importancia para la estimación y la predicción en estadística espacial, y establecemos conexiones con otras disciplinas en las que ha ejercido influencia. Después situamos el modelo Matérn en la literatura sobre macrodatos y computación escalable: se examinan el enfoque SPDE, la aproximación de Vecchia a la verosimilitud y aplicaciones recientes en computación bayesiana. Por último, revisamos desarrollos recientes, entre ellos alternativas flexibles al modelo Matérn, cuyo desempeño comparamos en términos de estimación, predicción, efecto de apantallamiento, computación y propiedades de regularidad de Sobolev.
+
+**Palabras clave:** teoría de la aproximación, soporte compacto, covarianza, núcleo, kriging, aprendizaje automático, máxima verosimilitud, espacios de Hilbert con núcleo reproductor, estadística espacial, espacios de Sobolev.
+
+::: {.callout-note title="Nota editorial"}
+La traducción conserva el contenido y la numeración conceptual del original. Las dos tablas, compuestas como material vectorial en el PDF fuente, se reproducen mediante una imagen de alta resolución de la página original para preservar exactamente sus valores y disposición.
+:::
+

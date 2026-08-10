@@ -1,0 +1,29 @@
+# El modelo Matérn {#Sec2}
+
+El *modelo Matérn*, ${\cal M}_{\nu, \alpha}$ , se define como [148]
+
+$$
+\label{matern}
+{\cal M}_{\nu, \alpha} (x) = \frac{2^{1-\nu}}{\Gamma(\nu)} \left ( \frac{x}{\alpha} \right )^{\nu} {\cal K}_{\nu}\left ( \frac{x}{\alpha} \right ), \qquad x \ge 0,
+$$
+
+con $\alpha > 0$ el parámetro *escala*, $\nu >0$ los parámetros de *suavidad*, y ${\cal K}_{\nu}$ una función de Bessel modificada de segundo tipo de orden $\nu$ [2 9.6.22]. Se puede comprobar que ${\cal M}_{\nu,\alpha}(0)=1$ , de modo que [matern\] es una función de correlación. Argumentos en[148][p48] muestra que ${\cal M}_{\nu,\alpha}$ pertenece a la clase $\Phi_{\infty}$ . la funcion $\sigma^2 {\cal M}_{\nu,\alpha}$ se denominará *función de covarianza de Matérn*, y $\sigma^2>0$ denotará la varianza del campo aleatorio gaussiano asociado.
+
+La importancia de la clase Matérn surge del parámetro $\nu$ que controla la diferenciabilidad de las trayectorias muestrales del campo gaussiano asociado. Específicamente, para cualquier entero positivo $k$ , las trayectorias muestrales de un campo gaussiano $Z$ en $\mathbb{R}^d$ con función de correlación de Matérn son $k$ veces diferenciables en media cuadrática (en cualquier dirección) si y solo si $\nu > k$ . Además, una versión reescalada de la función de correlación de Matérn converge al núcleo exponencial gaussiano o al cuadrado como $\nu \rightarrow \infty$ , es decir
+
+$$
+\label{eqGauLim}
+{\cal M}_{\nu, \alpha/(2 \sqrt{\nu})}(x) \xrightarrow[\nu \to \infty]{} \exp(- x^2/\alpha^2), \qquad x \ge 0,
+$$
+
+siendo la convergencia uniforme en cualquier conjunto compacto de $\mathbb{R}^d$ . Por este motivo, la parametrización ${\cal M}_{\nu, \alpha/(2 \sqrt{\nu})}$ a veces también se adopta [169].
+
+Cuando $\nu=k+ 1/2$ , para $k$ es un número entero no negativo, la función de correlación de Matérn se simplifica al producto de una función de correlación exponencial negativa con un polinomio de orden $k$ . Por ejemplo, ${\cal M}_{1/2,1}(x)= \exp(-x)$ y ${\cal M}_{3/2,1}(x)= \exp(-x) (1+x)$ . En general,
+
+$$
+{\cal M}_{k+1/2,1}(x)= \exp(-x) \sum_{i=0}^k \frac{(k+i)!}{2k!} \binom{k}{i} (2x)^{k-i}
+$$
+
+por $k \in \mathbb{N}_0$ . Esta forma algebraica simple de las funciones de correlación de Matérn ha contribuido sin duda a la amplia popularidad del modelo de Matérn.
+
+Ahora estamos en condiciones de explorar en detalle las múltiples caras del modelo Matérn. La sección [3](#Sec3) analiza la estimación de máxima verosimilitud, la predicción de kriging y el efecto de apantallamiento, mientras que la sección [4](#Sec4) explora una caracterización SPDE del modelo Matérn. La sección [5](#secModeling) analiza el modelo Matérn como componente básico de modelos más sofisticados, mientras que la sección [6](#sec5) analiza el panorama científico a través de la lente del modelo Matérn, con especial énfasis en el análisis numérico, la teoría de la probabilidad y el aprendizaje automático. La sección [sec6\] presenta algunas alternativas y generalizaciones recientemente desarrolladas del modelo Matérn, mientras que la sección [8](#sec7) compara estos modelos alternativos en términos de estimación, predicción y efecto de apantallamiento.

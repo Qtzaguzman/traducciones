@@ -1,0 +1,365 @@
+# Referencias {.unnumbered}
+
+Åberg, S. y Podgórski, K. (2011). Una clase de campos aleatorios de segundo orden no gaussianos. , 14(2):187--222.
+
+Abramowitz, M. y Stegun, I. A., editores (1970). . Dover, Nueva York.
+
+Alegría, A., Cuevas-Pacheco, F., Diggle, P. y Porcu, E. (2021a). La familia F de funciones de covarianza: un análogo de Matérn para modelar campos aleatorios en esferas. , 43:100512.
+
+Alegría, A., Emery, X. y Porcu, E. (2021b). Covarianzas bivariadas de Matérn con hoyuelo cruzado para modelar variables corregionalizadas. , 41:100491.
+
+Alegría, A., Ramírez, F. y Porcu, E. (2023). Clases paramétricas híbridas de funciones de covarianza isotrópicas para campos aleatorios espaciales. .
+
+Allard, D., Clarotto, L. y Emery, X. (2022). Funciones de covarianza de Gneiting totalmente inseparables para datos espacio-temporales multivariados. , 52:100706.
+
+Allard, D., Senoussi, R. y Porcu, E. (2016). Modelos de anisotropía para datos espaciales. , 48(3):305--328.
+
+Andéres, E. (2010). Sobre la separación consistente de escala y varianza para campos aleatorios gaussianos. , 38(2):870--893.
+
+Anderes, E., Møller, J. y Rasmussen, J. G. (2020). Funciones de covarianza isotrópicas en gráficos y sus aristas. , 48(4):2478--2503.
+
+Angulo, J., Kelbert, M. Y., Leonenko, N. y Ruiz-Medina, M. D. (2008). Campos aleatorios espaciotemporales asociados con ecuaciones de calor y Helmholtz fraccionarias estocásticas. , 22(1):3--13.
+
+Apanasovich, T. V., Genton, M. G. y Sun, Y. (2012). Una clase Matérn válida de funciones de covarianza cruzada para campos aleatorios multivariados con cualquier número de componentes. , 107(497):180--193.
+
+Askey, R. (1973). Funciones características radiales. .
+
+Bachoc, F., Bevilacqua, M. y Velandia, D. (2019). Estimación de verosimilitud compuesta para un proceso gaussiano bajo asintóticas de dominio fijo. , 174:104534.
+
+Bachoc, F., Porcu, E., Bevilacqua, M., Furrer, R. y Faouzi, T. (2022). . , 28(4):2518-2545.
+
+Bakka, H., Krainski, E., Bolin, D., Rue, H. y Lindgren, F. (2020). La extensión basada en la difusión del campo Matérn al espacio-tiempo. .
+
+Banerjee, S. y Gelfand, A. E. (2006). Wombling bayesiano: evaluación de gradiente curvilíneo bajo modelos de procesos espaciales. , 101(476):1487--1501.
+
+Banerjee, S., Gelfand, A. E., Finley, A. O. y Sang, H. (2008). Modelos de procesos predictivos gaussianos para grandes conjuntos de datos espaciales. , 70(4):825--848.
+
+Banerjee, S., Gelfand, A. E. y Sirmans, C. F. (2003). Tasas direccionales de cambio bajo modelos de procesos espaciales. , 98(464):946--954.
+
+Barp, A., Oates, C. J., Porcu, E. y Girolami, M. (2022). Un método del núcleo de Riemann-Stein. , 28(4):2181--2208.
+
+Benzi, M. (2016). Localización en cálculos matriciales: teoría y aplicaciones. En Benzi, M. y Simoncini, V., editores, *Explotación de la estructura oculta en cálculos matriciales: algoritmos y aplicaciones: Cetraro, Italia 2015*, páginas 211--317. Publicaciones internacionales Springer.
+
+Berg, C. (2008). Stieltjes--Pick--Bernstein--Schoenberg y su conexión con la monotonía total. En Mateu, S. y Porcu, E., editores, *Funciones definidas positivas: de Schoenberg a los desafíos del espacio-tiempo*, páginas 15--45. España: Departamento de Matemáticas, Universidad Jaume I, Castellón de la Plana.
+
+Berg, C., Mateu, J. y Porcu, E. (2008). La familia Dagum de funciones de correlación isotrópica. , 14(4):1134--1149.
+
+Bevilacqua, M., Caamaño-Carrillo, C. y Porcu, E. (2022). Unificación de funciones de covarianza de Matérn y soporte compacto en estadística espacial. , 189:104949.
+
+Bevilacqua, M., Caamaño-Carrillo, C., Arellano-Valle, R. B. y Morales-Oñate, V. (2021). Modelado geoestadístico no gaussiano utilizando procesos t (sesgados). , 48(1):212--245.
+
+Bevilacqua, M., Faouzi, T., Furrer, R. y Porcu, E. (2019). . , 47(2):828--856.
+
+Bevilacqua, M. y Gaetan, C. (2015). Comparación de métodos de verosimilitud compuesta basados ​​en pares para campos aleatorios espaciales gaussianos. , 25(5):877--892.
+
+Bingham, N. H., Goldie, C. M. y Teugels, J. (1987). . , 27:145--156.
+
+Bochner, S. (1955). . Monografías de California en ciencias matemáticas. Prensa de la Universidad de California.
+
+Bolín, D. (2014). Campos espaciales de Matérn impulsados ​​por ruido no gaussiano. , 41(3):557--579.
+
+Bolin, D. y Kirchner, K. (2020). El enfoque SPDE racional para campos aleatorios gaussianos con suavidad general. , 29(2):274--285.
+
+Bolin, D. y Kirchner, K. (2022). Equivalencia de medidas y predicción lineal asintóticamente óptima para campos aleatorios gaussianos con operadores de covarianza de orden fraccionario. .
+
+Bolin, D., Simas, A. B. y Wallin, J. (2022). Campos gaussianos de Whittle-Matérn en gráficos métricos.
+
+Bolin, D. y Wallin, J. (2016). Campos aleatorios de ecuación diferencial parcial estocástica de Matérn tipo multivariante. .
+
+Borovitskiy, V., Azangulov, I., Terenin, A., Mostowsky, P., Deisenroth, M. y Durrande, N. (2021). Procesos gaussianos de Matérn en gráficos. En Banerjee, A. y Fukumizu, K., editores, *Actas de la 24ª Conferencia Internacional sobre Inteligencia Artificial y Estadística*, volumen 130 de *Actas de investigación sobre aprendizaje automático*, páginas 2593--2601. PMLR.
+
+Borovitskiy, V., Terenin, A., Mostowsky, P., et al. (2020). Procesos gaussianos de Matérn en variedades de Riemann. , 33:12426--12437.
+
+Bourotte, M., Allard, D. y Porcu, E. (2016). Una clase flexible de funciones de covarianza cruzada no separables para datos espacio-temporales multivariados. , 18:125--146.
+
+Brown, R. D., Bardsley, J. M. y Cui, T. (2020). Métodos de semivariograma para modelar prioritarios de Whittle-Matérn en problemas inversos bayesianos. , 36(5):055006.
+
+Buhmann, M. (2001). Una nueva clase de funciones de base radial con soporte compacto. , 70(233):307--318.
+
+Cameletti, M., Lindgren, F., Simpson, D. y Rue, H. (2013). Modelado espacio-temporal de la concentración de material particulado mediante el enfoque spde. , 97(2):109--131.
+
+Chernih, A. y Hubbert, S. (2014). Representaciones en forma cerrada y propiedades de las funciones de Wendland generalizadas. , 177:17--33.
+
+Chilès, J. y Delfiner, P. (2012). . Wiley, Nueva York.
+
+Clotto, L., Allard, D., Romary, T. y Desassis, N. (2022). El enfoque spde para conjuntos de datos espacio-temporales con advección y difusión: un enfoque sin matrices. En *15ª Conferencia Internacional del Grupo de Trabajo ERCIM sobre Estadística Computacional y Metodológica (CMStatistics 2022)*.
+
+Cockayne, J., Oates, C. J., Sullivan, T. J. y Girolami, M. (2019). Métodos numéricos probabilísticos bayesianos. , 61(4):756--789.
+
+Cressie, N. (1990). Los orígenes del kriging. , 22(3):239--252.
+
+Cressie, N. y Johannesson, G. (2008). kriging de rango fijo para conjuntos de datos espaciales muy grandes. , 70(1):209--226.
+
+Daley, D. J., Porcu, E. y Bevilacqua, M. (2015). Clases de funciones de covarianza compatibles de forma compacta para campos aleatorios multivariados. , 29(4):1249--1263.
+
+Datta, A. (2022). Matrices de Cholesky dispersas del vecino más cercano en estadística espacial. , 14(5):e1574.
+
+Datta, A., Banerjee, S., Finley, A. O. y Gelfand, A. E. (2016a). Modelos de procesos gaussianos jerárquicos del vecino más cercano para grandes conjuntos de datos geoestadísticos. , 111(514):800--812.
+
+Datta, A., Banerjee, S., Finley, A. O., Hamm, N. A. y Schaap, M. (2016b). Modelos de procesos gaussianos dinámicos no separables del vecino más cercano para grandes datos espacio-temporales con una aplicación al análisis de partículas. , 10(3):1286.
+
+Davydov, O. y Schaback, R. (2019). Plantillas óptimas en espacios de Sobolev. , 39:398--422.
+
+Dey, D., Datta, A. y Banerjee, S. (2022). Modelos gráficos de procesos gaussianos para datos espaciales altamente multivariados. , 109(4):993--1014.
+
+Eidsvik, J., Shaby, B., Reich, B., Wheeler, M. y Niemi, J. (2013). Estimación y predicción en modelos espaciales con probabilidades compuestas de bloques. , aparecer.
+
+Emery, X. y Alegría, A. (2022). El núcleo de covarianza hipergeométrica de Gauss para modelar campos aleatorios estacionarios de segundo orden en espacios euclidianos: su soporte compacto, propiedades y representación espectral. , 36:2819----2834.
+
+Emery, X., Porcu, E. y White, P. (2022). Nuevas condiciones de validez para el modelo multivariado de Corregionalización de Matérn, con aplicación a la geoquímica de exploración. , páginas 1--26.
+
+Faouzi, T., Porcu, E. y Bevilacqua, M. (2022). Estimación y predicción espacio-temporal bajo asintóticas de dominio fijo con funciones de covarianza soportadas de forma compacta. , 32:1--17.
+
+Faouzi, T., Porcu, E., Bevilacqua, M. y Kondrashuk, I. (2020). Operadores Zastavnyi y funciones radiales definidas positivas. , 157:108620.
+
+Fasshauer, G. (1997). Resolución de ecuaciones diferenciales parciales mediante colocación con funciones de base radial. En LeMéhauté, A., Rabut, C. y Schumaker, L., editores, *Métodos de ajuste de superficies y multiresolución*, páginas 131--138. Prensa de la Universidad de Vanderbilt, Nashville, Tennessee.
+
+Fasshauer, G. y McCourt, M. (2015). , volumen 19 de *Ciencias Matemáticas Interdisciplinarias*. World Scientific, Singapur.
+
+Furrer, R., Genton, M. G. y Nychka, D. (2006). Reducción gradual de la covarianza para la interpolación de grandes conjuntos de datos espaciales. , 15(3):502--523.
+
+Genton, M. G. y Kleiber, W. (2015). Funciones de covarianza cruzada para geoestadísticas multivariadas. , 30(2):147--163.
+
+Gneiting, T. (2002a). Funciones de correlación con soporte compacto. , 83:493--508.
+
+Gneiting, T. (2002b). Funciones de covarianza estacionarias no separables para datos espacio-temporales. , 97:590--600.
+
+Gneiting, T. (2013). Funciones definidas estrictamente y no estrictamente positivas en esferas. , 19(4):1327--1349.
+
+Gneiting, T., Kleiber, W. y Schlather, M. (2010). Funciones de covarianza cruzada de Matérn para campos aleatorios multivariados. , 105:1167--1177.
+
+Gneiting, T. y Schlather, M. (2004). Modelos estocásticos que separan la dimensión fractal y el efecto Hurst. , 46(2):269--282.
+
+Gneiting, T., Ševčíková, H. y Percival, D. B. (2012). . , 27(2):247-277.
+
+Guinness, J. (2018). Métodos de permutación y agrupación para afinar las aproximaciones del proceso gaussiano. , 60(4):415--429.
+
+Guinness, J. (2022). Inversas de las covarianzas de Matérn en grillas. , 109(2):535--541.
+
+Guinness, J. y Fuentes, M. (2016). Funciones de covarianza isotrópica en esferas: algunas propiedades y consideraciones de modelado. , 143:143--152.
+
+Guttorp, P. y Gneiting, T. (2006). Estudios de historia de la probabilidad y la estadística XLIX: Sobre la familia de correlaciones de Matérn. , 93(4):989--995.
+
+Halder, A., Banerjee, S. y Dey, DK (2023). Modelado bayesiano con procesos de curvatura espacial. , ?(recién aceptado):1--27.
+
+Harrar, SW, Seneta, E. y Gupta, AK (2006). Dualidad entre distribuciones de matriz variable t y de matriz variable vg. , 97(6):1467--1475.
+
+Hartikainen, J. y Särkkä, S. (2010). Soluciones de filtrado y suavizado de Kalman para modelos de regresión de procesos gaussianos temporales. En *Taller internacional IEEE de 2010 sobre aprendizaje automático para procesamiento de señales*, páginas 379-384. IEEE.
+
+Heaton, M. J., Datta, A., Finley, A. O., Furrer, R., Guinness, J., Guhaniyogi, R., Gerber, F., Gramacy, R. B., Hammerling, D., Katzfuss, M., Lindgren, F., Nychka, D. W., Sun, F. y Zammit-Mangion, A. (2019). Una competencia de estudios de caso entre métodos para analizar grandes datos espaciales. , 24:398--425.
+
+Hennig, P., Osborne, M. A. y Kersting, H. P. (2022). . Prensa de la Universidad de Cambridge.
+
+Hubbert, S. (2012). Representaciones de forma cerrada para una clase de funciones de base radial con soporte compacto. , 36(1):115--136.
+
+Ip, H. L. y Li, W. K. (2017). Sobre algunas funciones de covarianza de Matérn para campos aleatorios espacio-temporales. , 27:805--822.
+
+Jansson, E., Kovács, M. y Lang, A. (2022). Aproximación de elementos finitos de superficie de campos aleatorios esféricos gaussianos de Whittle--Matérn. , 44(2):A825--A842.
+
+Jaquier, N., Borovitskiy, V., Smolensky, A., Terenin, A., Asfour, T. y Rozo, L. (2022). Optimización bayesiana consciente de la geometría en robótica utilizando núcleos Riemannian Matérn. En *Conferencia sobre aprendizaje de robots*, páginas 794--805. PMLR.
+
+Jensen, K., Kao, T.-C., Tripodi, M. y Hennequin, G. (2020). Múltiples gplvms para descubrir estructuras latentes no euclidianas en datos neuronales. , 33:22580--22592.
+
+Karvonen, T. (2022). Límites asintóticos para estimaciones de parámetros de suavidad en la regresión del proceso gaussiano. .
+
+Karvonen, T. y Oates, C. J. (2022). La estimación de máxima verosimilitud en la regresión del proceso gaussiano está mal planteada. . Para aparecer.
+
+Katzfuss, M. y Guinness, J. (2021). . , 36(1):124 - 141.
+
+Kaufman, C. G. y Shaby, B. A. (2013). El papel del parámetro de rango para la estimación y predicción en geoestadística. , 100:473--484.
+
+Kelbert, M. Y., Leonenko, N. N. y Ruiz-Medina, M. (2005). Campos aleatorios fraccionarios asociados con ecuaciones estocásticas de calor fraccional. , 37(1):108--133.
+
+Kent, JT (1989). Propiedades de continuidad para campos aleatorios. , páginas 1432--1440.
+
+Khristenko, U., Scarabosio, L., Swierczynski, P., Ullmann, E. y Wohlmuth, B. (2019). Análisis de efectos de contorno en el muestreo basado en PDE de campos aleatorios de Whittle-Matérn. , 7(3):948--974.
+
+Kleiber, W. y Nychka, D. (2012). Modelado no estacionario para procesos espaciales multivariados. , 112:76--91.
+
+Kleiber, W. y Porcu, E. (2015). Covarianzas matriciales no estacionarias: soporte compacto, dependencia de largo alcance y construcciones cuasi-aritméticas. , 29(1):193--204.
+
+Koepernik, P. y Pfaff, F. (2021). Consistencia de la regresión del proceso gaussiano en espacios métricos. , 22:244--1.
+
+Laga, I. y Kleiber, W. (2017). El proceso de Matérn modificado. , 6(1):241--247.
+
+Lang, A. y Pereira, M. (2021). Aproximación de Galerkin-Chebyshev de campos aleatorios gaussianos en variedades compactas de Riemann. .
+
+Lavin, A., Zenil, H., Paige, B., Krakauer, D., Gottschlich, J., Mattson, T., Anandkumar, A., Choudry, S., Rocki, K., Baydin, A. G., et al. (2021). Inteligencia de simulación: hacia una nueva generación de métodos científicos. .
+
+Leonenko, N. y Malyarenko, A. (2017). Campos aleatorios con valores tensoriales de clase Matérn y más. , 168(6):1276--1301.
+
+Leonenko, N., Malyarenko, A. y Olenko, A. (2022). Sobre la teoría espectral de los campos aleatorios en la pelota. , 107:61--76.
+
+Leonenko, N., Ruiz-Medina, M. D. y Taqqu, M. S. (2011). Campos aleatorios elípticos, hiperbólicos y parabólicos fraccionados. , 16:1134--1172.
+
+Li, D., Jones, A., Banerjee, S. y Engelhardt, B. E. (2021a). Procesos gaussianos multigrupo. .
+
+Li, D., Tang, W. y Banerjee, S. (2021b). Inferencia para procesos gaussianos con covariograma de Matérn sobre variedades compactas de Riemann. .
+
+Lilly, J. M., Sykulski, A. M., Early, J. J. y Olhede, S. C. (2017). Movimiento browniano fraccional, proceso de Matérn y modelado estocástico de dispersión turbulenta. , 24(3):481--514.
+
+Lim, S. y Teo, LP (2009). Campo aleatorio generalizado de Whittle-Matérn como modelo de fluctuaciones correlacionadas. , 42(10):105202.
+
+Lindgren, F., Bolin, D. y Rue, H. (2022). El enfoque SPDE para campos gaussianos y no gaussianos: 10 años y aún en funcionamiento. , página 100599.
+
+Lindgren, F., Rue, H. y Lindstroem, J. (2011). Un vínculo explícito entre los campos gaussianos y los campos aleatorios gaussianos de Markov: el enfoque estocástico de la ecuación diferencial parcial. , 73:423--498.
+
+Lindsay, B. (1988). Métodos de verosimilitud compuestos. , 80:221--239.
+
+Lodhia, A., Sheffield, S., Sun, X. y Watson, SS (2016). . , 13(ninguno):1 - 56.
+
+Loh, W.-L., Sun, S. y Wen, J. (2021). . , 49(6):3127-3152.
+
+Ma, P. y Bhadra, A. (2022). Más allá de Matérn: sobre una clase de funciones de covarianza hipergeométricas confluentes interpretables. , páginas 1--14.
+
+Mardia, K. V. y Marshall, J. (1984). Estimación de máxima verosimilitud de modelos de covarianza residual en regresión espacial. , 71:135--146.
+
+Matérn, B. (1986). . Springer, Heidelberg, 2ª edición.
+
+Matheron, G. (1963). . Mémoires du Bureau de Recherches Géologiques et Minières, núm. 24. Ediciones BRGM, París.
+
+Matheron, G. (1965). . Massón, París.
+
+Matheron, G. (1971). . Centre de Géostatistique, Ecole des Mines de Paris, Fontainebleau, Francia.
+
+Menegatto, V., Oliveira, C. y Porcu, E. (2020). Clase gneiting, espacios semimétricos e incrustaciones isométricas. , 3(2):85--95.
+
+Morales-Navarrete, D., Bevilacqua, M., Caamaño-Carrillo, C. y Castro, L. (2022). Modelado de datos de recuento espacial con referencia a puntos: un enfoque de proceso de Poisson. , 0(0):1--25.
+
+Narcowich, F. J., Ward, J. D. y Wendland, H. (2006). Estimaciones del error de Sobolev y desigualdad de Bernstein para la interpolación de datos dispersos mediante funciones de base radial. , 24(2):175--186.
+
+Nikitin, A. V., John, S., Solin, A. y Kaski, S. (2022). Núcleos de gráficos espacio-temporales no separables a través de SPDE. En *Conferencia Internacional sobre Inteligencia Artificial y Estadística*, páginas 10640--10660. PMLR.
+
+Novak, E. y Woźniakowski, H. (2008). , volumen 2. Sociedad Matemática Europea.
+
+Oates, C. J., Girolami, M. y Chopin, N. (2017). Funcionales de control para la integración Monte Carlo. , 79(3):695--718.
+
+Olver, F. W., Lozier, D. M., Boisvert, R. F. y Clark, C. W. (2010). . Prensa de la Universidad de Cambridge, Cambridge.
+
+Paciorek, C. J. y Schervish, MJ (2006). Modelado espacial utilizando una nueva clase de funciones de covarianza no estacionarias. , 17(5):483--506.
+
+Palacios, M. B. y Steel, M. F. J. (2006). Modelado geoestadístico bayesiano no gaussiano. , 101:604--618.
+
+Pereira, M., Desassis, N. y Allard, D. (2022). Geoestadística para grandes conjuntos de datos sobre variedades de Riemann: un enfoque sin matrices. .
+
+Porcu, E., Alegría, A. y Furrer, R. (2018). Modelado de datos espacialmente globales y en evolución temporal. , 86:344--377.
+
+Porcu, E., Bevilacqua, M. y Genton, M. G. (2020a). Funciones de covarianza espacio-temporal no separables con soportes compactos dinámicos. , 30:719--739.
+
+Porcu, E., Daley, D. J., Buhmann, M. y Bevilacqua, M. (2013). Funciones de base radial con soporte compacto para geoestadísticas multivariadas. , 27(4):909--922.
+
+Porcu, E., Emery, X. y Mery, N. (2022a). Criterios y caracterizaciones para funciones de covarianza valoradas en matrices espacialmente isotrópicas y temporalmente simétricas. , 41(223).
+
+Porcu, E., Furrer, R. y Nychka, D. (2021). años de funciones de covarianza espacio-temporal. , 13(2):e1512.
+
+Porcu, E., White, P. A. y Genton, M. G. (2022b). Funciones de covarianza estacionarias espacio-temporales no separables en redes a través del tiempo. .
+
+Porcu, E., Zastavnyi, V., Bevilacqua, M. y Emery, X. (2020b). Hipótesis de Stein y efecto de apantallamiento de covarianzas con soporte compacto. , 14(2):2510--2528.
+
+Porcu, E., Zastavyi, P. y Bevilacqua, M. (2016). Funciones de covarianza de Buhmann, sus soportes compactos y su suavidad. .
+
+Posa, D. (2023). Clases especiales de funciones de covarianza isotrópicas. , En prensa.
+
+Quick, H., Banerjee, S. y Carlin, B. P. (2013). Modelado de gradientes temporales en datos de hospitalización por asma de California agregados regionalmente. , 7(1):154.
+
+Roininen, L., Girolami, M., Lasanen, S. y Markkanen, M. (2019). Hiperpriores para campos Matérn con aplicaciones en inversión bayesiana. , 13(1).
+
+Sanz-Alonso, D. y Yang, R. (2022a). Representaciones de elementos finitos de procesos gaussianos: equilibrio de la precisión numérica y estadística. , 10(4):1323--1349.
+
+Sanz-Alonso, D. y Yang, R. (2022b). El enfoque SPDE a los campos Matérn: representaciones grafos. , 37(4):519--540.
+
+Sarkka, S., Solin, A. y Hartikainen, J. (2013). Aprendizaje espaciotemporal mediante filtrado y suavizado bayesiano de dimensión infinita: una mirada a la regresión del proceso gaussiano mediante el filtrado de Kalman. , 30(4):51--61.
+
+Schaback, R. (2011). Las funciones Wendland que faltan. , 34(1):67--81.
+
+Schaback, R. (2015). Una herramienta computacional para comparar todos los solucionadores de PDE lineales. , 41:333--355.
+
+Schaback, R. (2017). Análisis de errores de métodos nodales sin malla. En Griebel, M. y Schweitzer, M., editores, *Meshfree Methods for Partial Differential Equations VIII*, volumen 115 de *Lecture Notes in Computational Science and Engineering*, páginas 117--143. Saltador.
+
+Schaback, R. y Wendland, H. (2006). Técnicas del Kernel: del Machine Learning a los Métodos Meshless. , 15:543--639.
+
+Scheuerer, M. (2010). Regularidad de los caminos muestrales de un campo aleatorio general de segundo orden. , 120(10):1879--1897.
+
+Scheuerer, M., Schaback, R. y Schlather, M. (2013). Interpolación de datos espaciales: ¿un problema estocástico o determinista? , 24(4):601--629.
+
+Schoenberg, I.-J. (1938). Espacios métricos y funciones completamente monótonas. , 39(4):811--841.
+
+Schoenberg, IJ (1942). Funciones definidas positivas en esferas. , 9:96--108.
+
+Shaby, B. y Ruppert, D. (2012). Covarianza cónica: estimación bayesiana y asintóticas. , 21:433--452.
+
+South, L. F., Karvonen, T., Nemeth, C., Girolami, M. y Oates, C. J. (2022). Funcionales de control semiexactos del método de Sard. , 109(2):351--367.
+
+Stein, M. (1988). Predicción asintóticamente eficiente de un campo aleatorio con una función de covarianza mal especificada. , 16:55--63.
+
+Stein, M. (2005). Métodos estadísticos para el seguimiento periódico de datos. , 67:667--687.
+
+Stein, ML (1999). . Springer, Nueva York.
+
+Stein, ML (2002). El efecto de apantallamiento en kriging. , 30(1):298--323.
+
+Stein, ML (2004). Equivalencia de medidas gaussianas para algunos campos aleatorios no estacionarios. , 123(1):1--11.
+
+Stein, ML (2011). Conferencia de Rietz: ¿Cuándo se produce el efecto de apantallamiento? , 39(6):2795--2819.
+
+Stein, ML (2015). ¿Cuándo no se mantiene el efecto de apantallamiento? , 11:65--80.
+
+Stein, M. L., Chi, Z. y Welty, L. J. (2004). Probabilidades aproximadas para grandes conjuntos de datos espaciales. , 66(2):275--296.
+
+Sun, Y., Li, B. y Genton, M. G. (2012). Geoestadísticas para grandes conjuntos de datos. En *Avances y desafíos en el modelado espacio-temporal de eventos naturales*, páginas 55--77. Saltador.
+
+Tang, J. y Zimmerman, D. (2020). Modelos de covarianza espacio-temporal en redes con aplicación en flujos. .
+
+Tang, W., Zhang, L. y Banerjee, S. (2021). Sobre la identificabilidad y consistencia de la pepita en los modelos de procesos espaciales gaussianos. , 83(5):1044--1070.
+
+Terdik, G. (2015). Espectros angulares para campos isotrópicos no gaussianos. , 29(4):833--865.
+
+Terdik, G. (2022). Funciones de covarianza espaciotemporal para campos ARMA laplacianos en dimensiones superiores. , 107:111--132.
+
+Tuo, R. y Wang, W. (2020). Predicción de kriging con correlaciones isotrópicas de Matérn: robustez y diseños experimentales. , 21:187--1.
+
+Tuo, R., Wang, Y. y Jeff Wu, C. (2020). Sobre las tasas de convergencia mejoradas para la regresión de crestas del núcleo tipo Matérn con aplicación a la calibración de modelos informáticos. , 8(4):1522--1547.
+
+Vakili, S., Moss, H., Artemev, A., Dutordoir, V. y Picheny, V. (2021). Muestreo escalable de Thompson utilizando modelos de procesos gaussianos dispersos. , 34:5631--5643.
+
+Varin, C., Reid, N. y Firth, D. (2011). Una descripción general de los métodos de probabilidad compuesta. , 21:5--42.
+
+Vecchia, AV (1988). Estimación e identificación de modelos para procesos espaciales continuos. , páginas 297--312.
+
+Wallin, J. y Bolin, D. (2015). Modelado geoestadístico utilizando campos Matérn no gaussianos. , 42(3):872--890.
+
+Wendland, H. (1995). Funciones radiales de grado mínimo polinómicas por partes, definidas positivas y compactamente soportadas. , 4:389--396.
+
+Wendland, H. (2004). , volumen 17. Prensa de la Universidad de Cambridge.
+
+Whittle, P. (1953). El análisis de múltiples series temporales estacionarias. , 15(1):125--139.
+
+Whittle, P. (1963). Procesos estocásticos en varias dimensiones. , 40(2):974--994.
+
+Williams, C. K. y Rasmussen, C. E. (2006). , volumen 2. MIT press Cambridge, MA.
+
+Wilson, A. G., Hu, Z., Salakhutdinov, R. y Xing, E. P. (2016). Aprendizaje profundo del núcleo. En *Inteligencia artificial y estadística*, páginas 370--378. PMLR.
+
+Wilson, J. T., Borovitskiy, V., Terenin, A., Mostowsky, P. y Deisenroth, M. P. (2021). Condicionamiento de trayectoria de procesos gaussianos. , 22:105--1.
+
+Wu, Z. (1992). ermite: interpolación de Birkhoff de datos dispersos mediante funciones de base radial. , 8/2:1--10.
+
+Xua, G. y Genton, M. G. (2017). Campos aleatorios Tukey g-y-h. , 112:1236-1249.
+
+Yan, Y. y Genton, M. G. (2018). Inferencia de probabilidad gaussiana sobre datos de campos aleatorios transgaussianos con función de covarianza de Matérn. , 29(5-6):e2458.
+
+Zastavnyi, V. (2002). Funciones radiales definidas positivas y splines. , 66:213--216.
+
+Zastavnyi, V. (2006). Sobre algunas propiedades de las funciones de Buhmann. , 58(8).
+
+Zastavnyi, V. y Porcu, E. (2017). Sobre la certeza positiva de algunas funciones radiales. , 38(2):386--394.
+
+Zastavnyi, V. P. y Porcu, E. (2011). Teoremas de caracterización de la clase Gneiting de funciones de covarianza espacio-temporal. , 17(1):456--465.
+
+Zhang, H. (2004). Estimación inconsistente e interpolaciones asintóticamente equivalentes en geoestadísticas basadas en modelos. , 99:250--261.
+
+Zhang, H. y Zimmerman, D. (2005). Hacia la conciliación de dos marcos asintóticos en estadística espacial. , 92:921--936.
+
+::: center
+**Material complementario**
+:::

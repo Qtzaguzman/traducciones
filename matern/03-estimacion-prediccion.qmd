@@ -1,0 +1,170 @@
+# Estimación y Predicción con el Modelo Matérn {#Sec3}
+
+Sea $D\subset \mathbb{R}^d$ un subconjunto de $\mathbb{R}^d$ . Considere un conjunto $X_n = \{\boldsymbol{x}_1,\dots,\boldsymbol{x}_n\}$ de ubicaciones (distintas) en $D$ , en el que se observan los valores $\boldsymbol{Z}_n=(Z(\boldsymbol{x}_1),\ldots,Z(\boldsymbol{x}_n))^{\top}$ del campo aleatorio gaussiano $Z$ , definido en la sección [1.1](#background). Un problema importante tiene que ver con la *predicción* de los valores $Z(\boldsymbol{x}_0)$ en una ubicación no observada $\boldsymbol{x}_0\in D \setminus X_n$ . Entonces un predictor especialmente natural para $Z(\boldsymbol{x}_0)$ es
+
+$$
+\label{blup}
+\widehat{Z}_{n} =\boldsymbol{c}_n^\top 
+ \boldsymbol{R}_{n}^{-1}\boldsymbol{Z}_n
+$$
+
+con el vector $[\boldsymbol{c}_n]_i= K(\boldsymbol{x}_0,\boldsymbol{x}_i)$ y la *matriz del núcleo* $[\boldsymbol{R}_{n}]_{i,j} = K(\boldsymbol{x}_i,\boldsymbol{x}_j)$ . El predictor [blup\] se puede motivar desde múltiples direcciones. Clásicamente, [blup\] está motivado como el mejor predictor lineal insesgado (BLUP) para $Z(\boldsymbol{x}_0)$ , y a menudo se lo conoce como el predictor *kriging simple* de $Z(\boldsymbol{x}_0)$ [44]. Desde una perspectiva moderna, donde el papel de la estimación insesgada se cuestiona cada vez más, podemos motivar esta elección utilizando propiedades de optimización alternativas, que incluyen:
+
+**1.** es la expectativa de $Z(\boldsymbol{x}_0)$ condicionada a la realización de $\boldsymbol{Z}_n$ ;
+
+**2.** es la estimación óptima (es decir, la acción de Bayes) para $Z(\boldsymbol{x}_0)$ basada en el conjunto de datos $\boldsymbol{Z}_n$ , bajo pérdida de error al cuadrado [116 Section 13.3];
+
+**3.** produce la interpolación mínima de la norma RKHS de los datos evaluados en $\boldsymbol{x}_0$ , por la Sección [6.1](#SecNAaAT);
+
+**4.** es el algoritmo para aproximar $Z(\boldsymbol{x}_0)$ a partir de $\boldsymbol{Z}_n$ el que minimiza el peor de los errores en el sentido de la complejidad basada en la información [116 Section 10.2] y la teoría de aproximación (ver Sección [6.1](#SecNAaAT)),
+
+por nombrar sólo algunos. El modelo Matérn proporciona un entorno natural para estudiar el rendimiento de [blup\] si suponemos que $Z$ tiene una función de covarianza isotrópica estacionaria $\sigma^2 {\cal M}_{\nu,\alpha}$ . La cuestión crucial de cómo seleccionar valores adecuados para los parámetros $\sigma$ , $\alpha$ , $\nu$ se considerará primero en la sección [3.1](#seclik), y luego se estudiará el rendimiento de [blup\] en la sección [3.2](#pprr). La posibilidad de una extensión directa del modelo de Matérn a dominios más generales, como variedades y gráficos, se analiza en la sección [3.3].
+
+## Estimación utilizando la máxima verosimilitud {#seclik}
+
+La máxima verosimilitud (ML) y los métodos de estimación similares son populares en este entorno debido a la disponibilidad de métodos numéricos prácticos (incluidos los basados ​​en gradientes) para el cálculo y la teoría clásica que sustenta la ML. Por otro lado, en el uso del ML está implícito que el modelo estadístico está bien especificado y este juicio debe hacerse caso por caso. Para limitar el alcance, nos centramos en la estimación de ML en lo que sigue. Nuestro objetivo es comprender cuándo los parámetros del modelo de Matérn pueden estimarse consistentemente a partir de datos y comprender la distribución asintótica del estimador ML. Para ello, recuerde que la función logarítmica de verosimilitud gaussiana es
+
+$$
+\begin{aligned}
+\label{eq:17}
+\hspace{20pt} \mathcal{L}_{n}(\boldsymbol{\theta}) = -\frac{1}{2} \left( \log(|\sigma^2 \boldsymbol{R}_{n})|) + \frac{1}{\sigma^{2}}\boldsymbol{Z}_n^{\top}\boldsymbol{R}_{n}^{-1}\boldsymbol{Z}_n \right),
+\end{aligned}
+$$
+
+hasta una constante aditiva, con $\boldsymbol{\theta}=(\nu,\alpha, \sigma^{2})$ . El estimador ML se define como
+
+$$
+\widehat{\boldsymbol{\theta}}_{n}=\underset{\boldsymbol{\theta} \in \mathbb{R}^3_{+} }{\textrm{argmax}}\,\mathcal{L}_{n}(\boldsymbol{\theta}) . \label{eq: max like}
+$$
+
+La estimación de ML para el parámetro de varianza se puede calcular en forma cerrada como $\widehat{\sigma}^2_n=\boldsymbol{Z}_n^{\top} \boldsymbol{R}^{-1}_n \boldsymbol{Z}_n/n$ ; conectar esta expresión a [eq:17\] reduce el problema numérico a la optimización de la llamada *probabilidad concentrada* sobre $\mathbb{R}_+^2$ . Sin embargo, maximizar la probabilidad logarítmica (concentrada) requiere resolver un problema de optimización no lineal, para el cual se deben utilizar métodos numéricos; consulte la Sección [4.3].
+
+El rendimiento de la estimación ML se ha estudiado principalmente en dos límites asintóticos diferentes. Bajo *asintóticas de dominio fijo*, el dominio de muestreo $D$ está acotado y el conjunto de ubicaciones muestreadas $X_n$ se vuelve cada vez más denso en $D$ . Bajo *asintóticas de dominio crecientes*, el dominio $D$ crece con el número $n$ de datos observados, y la distancia entre dos ubicaciones muestreadas cualesquiera está acotada desde cero. [180] tenga en cuenta que el rendimiento del estimador ML puede ser bastante diferente en estos dos marcos, como se analizará a continuación.
+
+### Asintóticas de dominio crecientes. {#ida}
+
+[107] hace uso de asintóticas de dominio crecientes para establecer, bajo condiciones de regularidad leve, que el estimador ML es *fuertemente consistente*, lo que significa que $\widehat{\boldsymbol{\theta}}_{n}\stackrel{a.s.}{\longrightarrow} \boldsymbol{\theta}_0$ para el parámetro *verdadero* $\boldsymbol{\psi}_0$ . Además, establecen que el estimador ML es *asintóticamente normal*, es decir,
+
+$$
+\boldsymbol{F}^{1/2}(\boldsymbol{\theta}_0)(\widehat{\boldsymbol{\theta}}_{n}-\boldsymbol{\theta}_0) \stackrel{d}{\longrightarrow} \mathcal{N}(\boldsymbol{0},\boldsymbol{I})
+$$
+
+donde $\boldsymbol{F}(\boldsymbol{\theta})=-E[\mathcal{L}^{''}_{n}(\boldsymbol{\theta})]$ es la matriz de información de Fisher, cuyas entradas son
+
+$$
+F(\boldsymbol{\theta})_{i,j}=
+\frac {1}{2}\mathrm{tr} \left(\frac{\mathrm{d} \boldsymbol{\Sigma}_n}{\mathrm{d} \boldsymbol{\theta}_i} \boldsymbol{\Sigma}_n^{-1}\frac{\mathrm{d} \boldsymbol{\Sigma}_n}{\mathrm{d} \boldsymbol{\theta}_j} \boldsymbol{\Sigma}_n^{-1}\right) ,
+$$
+
+y $\boldsymbol{\Sigma}_{n}=\sigma^2 \boldsymbol{R}_n$ . Aunque nos centramos en el modelo de Matérn, observamos que este tipo de resultados asintóticos son válidos para cualquier función de correlación paramétrica que obedezca condiciones de regularidad particulares que se expresan en términos de condiciones de valores propios en la matriz de correlación y sus derivadas.[107], aunque estos pueden no ser fáciles de verificar en general (ver por ejemplo[144], para el caso exponencial). En términos generales, siempre que la extensión espacial de la región de muestreo sea grande en comparación con el rango de dependencia del campo aleatorio, las asintóticas de dominio creciente proporcionan una descripción muy precisa del comportamiento de la estimación de ML.[180; 144; 84].
+
+### Asintóticas de dominio fijo.
+
+[179] consideró la estimación de ML para el modelo de Matérn bajo asintóticas de dominio fijo, lo que demuestra que cuando el parámetro de suavidad $\nu$ es conocido y fijo, ninguno de los parámetros $\sigma^2$ y $\alpha$ se puede estimar de manera consistente cuando $d=1, 2, 3$ . En su lugar, sólo el parámetro
+
+$$
+\label{micro_matern}
+\text{micro}_{{\cal M}}= {\sigma^2}/{ \alpha^{2\nu}},
+$$
+
+a veces denominado *microergodic* parameter [180; 148], se puede estimar consistentemente. Esto es una consecuencia de la equivalencia de las dos medidas gaussianas correspondientes, que denotamos con $P(\sigma^2_i{\cal M}_{\nu,\alpha_i})$ , con $i=0,1$ . En particular, para cualquier conjunto infinito acotado $D\subset \mathbb{R}^d$ , $d=1, 2, 3$ , $P(\sigma^2_0{\cal M}_{\nu,\alpha_0})$ es equivalente a $P( \sigma^2_1{\cal M}_{\nu,\alpha_1})$ en los caminos de $Z(\boldsymbol{x}), \boldsymbol{x} \in D$ , si y sólo si
+
+$$
+\label{matern_equivalence}
+ \sigma_0^2 / \alpha_0^{2\nu}=\sigma_1^2/ \alpha_1^{2\nu}.
+$$
+
+En cambio, para $d \geq 5$ , [8]demostró la ortogonalidad de dos medidas gaussianas con diferentes funciones de covarianza de Matérn y, por lo tanto, en este caso, todos los parámetros pueden estimarse consistentemente bajo asintóticas de dominio fijo. el caso $d = 4$ ha sido estudiado recientemente en[31].
+
+Los resultados asintóticos asociados con la estimación de ML del parámetro microergódico, nuevamente para un parámetro de suavidad conocido fijo $\nu$ , se pueden encontrar en [179] y más adelante en [84]. En particular, para un campo gaussiano de media cero definido en un conjunto infinito acotado $D\subset \mathbb{R}^d$ , $d=1, 2, 3$ , con una función de covarianza de Matérn $\sigma^2_0{\cal M}_{\nu,\alpha_0}$ , el estimador ML $\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}$ del parámetro microergódico es fuertemente consistente, $i.e.$ ,
+
+$$
+\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}\stackrel{a.s.}{\longrightarrow} \sigma_{0}^{2}/\alpha_{0}^{2\nu},
+$$
+
+y su distribución asintótica viene dada por
+
+$$
+\sqrt{n}(\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}-\sigma_{0}^{2}/\alpha_{0}^{2\nu})\stackrel{d}{\longrightarrow} \mathcal{N}(0,2(\sigma_{0}^{2}/\alpha_{0}^{2\nu})^2).
+$$
+
+. En términos generales, cuando el rango de dependencia del campo aleatorio es grande con respecto a la extensión espacial de la región de muestreo, las asintóticas de dominio fijo proporcionan una descripción muy precisa del comportamiento de la estimación ML del parámetro microergódico [84]. Las extensiones de estos resultados al caso donde se observa $Z$ con errores gaussianos se pueden encontrar en [156], mientras que los resultados para una versión espacio-temporal del modelo de Matérn se pueden encontrar en [77] y [55]. Finalmente destacamos que la estimación eficiente del parámetro microergódico asumiendo que el parámetro de suavidad es desconocido aún es un problema abierto; Algunos resultados prometedores en esta dirección se pueden encontrar en [105].
+
+## Predicción y efecto de apantallamiento {#pprr}
+
+La equivalencia de medidas gaussianas dentro de la clase Matérn tiene consecuencias para la predicción de $Z(\boldsymbol{x}_0)$ en una ubicación no observada $\boldsymbol{x}_0 \in D \setminus X_n$ ; estas consecuencias se discutirán ahora. En lo que sigue, se supone que $\nu$ es conocido y solucionado, y consideramos la configuración donde $\sigma$ y $\alpha$ están *mal especificados*. Es decir, suponemos que $Z$ es un campo gaussiano con covarianza Matérn $\sigma_0^2 {\cal M}_{\nu,\alpha_0}$ , y consideramos el rendimiento del predictor [blup\] cuando se utiliza un modelo Matérn $\sigma_1^2 {\cal M}_{\nu,\alpha_1}$ . Esta situación es típica, ya que los verdaderos parámetros $\sigma_0$ y $\alpha_0$ del proceso de generación de datos serán desconocidos en general. Nuestro escenario teórico serán las asintóticas de dominio fijo.
+
+Tenga en cuenta, primero, que [blup\] no depende del valor de $\sigma_1$ , pero sí depende del valor del parámetro $\alpha_1$ (y del parámetro $\nu$ , pero este parámetro es fijo). Esta dependencia se enfatizará utilizando la notación $\boldsymbol{c}_n(\alpha_1)$ y $\boldsymbol{R}_{n}(\alpha_1)$ . Bajo la medida gaussiana $P(\sigma^2_0{\cal M}_{\nu,\alpha_0})$ asociada con el modelo *verdadero* $\sigma^2_0{\cal M}_{\nu,\alpha_0}$ , el error cuadrático medio del predictor $\widehat{Z}_{n}(\alpha_1)$ viene dado por
+
+$$
+\begin{aligned}
+&\operatorname{var}_{\alpha_0,\sigma^2_0}\left[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\right] \\ 
+&=\sigma_0^2\Big(1-2\boldsymbol{c}_n(\alpha_1)^{\top
+} \boldsymbol{R}_{n}(\alpha_1)^{-1}
+\boldsymbol{c}_n(\alpha_0) \\ 
+&\hspace{30pt} + \boldsymbol{c}_n(\alpha_1)^{\top} \boldsymbol{R}_{n}(\alpha_1)^{-1} \boldsymbol{R}_{n}(\alpha_0) \boldsymbol{R}_{n}(\alpha_1)^{-1}\boldsymbol{c}_n(\alpha_1)\Big) ,
+\end{aligned}
+$$
+
+mientras que si no hay ninguna especificación errónea entonces la expresión anterior se reduce a
+
+$$
+\begin{aligned}
+\label{msetrue}
+& \operatorname{var}_{\alpha_0,\sigma_0^2}\big[\widehat{Z}_{n}(\alpha_0)-Z(\boldsymbol{x}_0)\big]\\
+ \nonumber & \hspace{40pt} = \sigma_0^2\big(1-\boldsymbol{c}_n(\alpha_0)^\top\boldsymbol{R}_{n}^{-1}(\alpha_0)\boldsymbol{c}_n(\alpha_0)\big).
+\end{aligned}
+$$
+
+En condiciones de regularidad, y para asintóticas de dominio fijo,[146]muestra que tanto la predicción asintóticamente eficiente como la estimación asintóticamente correcta de la varianza de la predicción se mantienen cuando las dos medidas gaussianas $P(\sigma^2_i{\cal M}_{\nu,\alpha_i})$ , $i=0,1$ son equivalentes, *es decir* [matern_equivalence\]. Específicamente,
+
+$$
+\label{kauf3_1} \frac{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_0)-Z(\boldsymbol{x}_0)\bigr]}\stackrel{a.s.}{\longrightarrow}1
+$$
+
+y
+
+$$
+\label{kauf3_3} \frac{\operatorname{var}_{\sigma^2_1,\alpha_1}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}\stackrel{a.s.}{\longrightarrow}1.
+$$
+
+La implicación de ([kauf3_1\]) es que, según el modelo verdadero, si el valor correcto de $\nu$ se utiliza cualquier valor de $\alpha_1$ dará eficiencia asintótica. La implicación de ([kauf3_3\]) es más fuerte y garantiza que el uso del predictor mal especificado bajo los modelos correcto y mal especificado es asintóticamente equivalente desde el punto de vista del error cuadrático medio. Tenga en cuenta que este tipo de resultados no considera la incertidumbre asociada con los parámetros de covarianza del modelo mal especificado.[84]demuestre que ([kauf3_3\]) todavía se cumple considerando el estimador ML de la varianza $\hat{\sigma}^2_n=\boldsymbol{Z}_n^\top \boldsymbol{R}^{-1}_n(\alpha_1) \boldsymbol{Z}_n/n$ en su lugar $\sigma^2_1$ .
+
+También se han establecido condiciones de equivalencia de dos medidas gaussianas basadas en una versión espacio-temporal [77] y bivariada [14] del modelo de Matérn. A continuación, consideramos un aspecto prácticamente importante de la predicción; el llamado efecto de apantallamiento.
+
+*Efecto de cribado.* El *efecto de cribado* se refiere al fenómeno en el que el predictor [blup\] depende casi exclusivamente de aquellas observaciones que se encuentran más cercanas al predictand [149]. Como tal, el efecto de apantallamiento es una herramienta importante que se puede utilizar para mitigar la carga computacional de evaluar [blup\] en presencia de grandes conjuntos de datos. Esta cuestión ha sido tradicionalmente un tema importante en geoestadística [109; 110; 111; 41]. De hecho, [109] [110], en la Escuela de Geoestadística de la Escuela de Minas, desarrolló una primera formalización del efecto de cribado, refiriéndose a situaciones en las que las observaciones situadas lejos del pronóstico reciben un peso kriging cero. La definición de Matheron tiene una conexión directa con la propiedad de Markov en la recta real, que ocurre cuando se realiza kriging bajo el modelo exponencial (de hecho, ${\cal M}_{1/2,\alpha}$ ).
+
+M. Stein [148; 149; 151; 152] adopta una definición alternativa del efecto de apantallamiento que se describirá a continuación. Sea $Z$ un campo aleatorio gaussiano de media cuadrática continua, media cero y débilmente estacionario en $\mathbb{R}^d$ . Sea $e(X_n)$ el error del predictor [blup\] de $Z(\boldsymbol{x}_0)$ basado en $\boldsymbol{Z}_n$ . Se considerarán dos opciones para el conjunto $X_n$ de ubicaciones de observación y, para este fin, dejaremos que $F_{\epsilon}, N_{\epsilon}$ sean conjuntos, indexados por $\epsilon>0$ , de modo que $N_{\epsilon}$ contenga las observaciones más cercanas al predictando y $F_{\epsilon}$ las observaciones más lejanas. Luego [149] dice que $N_{\epsilon}$ *excluye asintóticamente* $F_{\epsilon}$ cuando
+
+$$
+\label{def-screening} \lim_{\epsilon \downarrow 0} \frac{\mathbb{E} \; e (N_{\epsilon} \cup F_{\epsilon})^2}{\mathbb{E} \; e (N_{\epsilon})^2} = 1.
+$$
+
+Se puede encontrar una discusión exhaustiva de las implicaciones de esta definición en [128], donde se informan diferencias no triviales entre dominio fijo y asintóticos de dominio creciente.
+
+La configuración espacial del punto de muestreo $X_n$ determina si se mantendrá el efecto de apantallamiento. [128] se refiere a un *esquema regular* como aquel para el cual $F_{\epsilon} = \{ \epsilon (\boldsymbol{x}_0+j) \}$ , $j \in \mathbb{Z}^d$ y $N_{\epsilon}$ son la restricción de $F_{\epsilon}$ a alguna región fija con $\boldsymbol{x}_0$ en su interior, asumiendo $\boldsymbol{x}_0 \notin \mathbb{Z}^d$ . Para esquemas regulares, [149] estableció ([def-screening\]) siempre que *el espectro $\widehat{K}$ varía regularmente en el infinito [27] en todas las direcciones con un índice de variación común* [citado de [128]]. Sin embargo, esta condición puede no ser útil para procesos espacio-temporales, donde las propiedades de diferenciabilidad en las coordenadas espacio-temporales no son necesariamente idénticas. Para superar este problema, consideramos en su lugar un *esquema irregular*: para que $\boldsymbol{x}_1, \ldots, \boldsymbol{x}_n$ sea elementos distintos de $\mathbb{R}^d$ , $\boldsymbol{y}_1, \ldots, \boldsymbol{y}_N$ sean elementos distintos de $\mathbb{R}^d$ , $\boldsymbol{x}_0=\boldsymbol{0} \in \mathbb{R}^d$ y $\boldsymbol{y}_0 \in \mathbb{R}^d$ sean distintos de cero, tenemos $N_{\epsilon} =\{\epsilon \boldsymbol{x}_1,\ldots,\epsilon \boldsymbol{x}_n \}$ y $F_{\epsilon} =\{\boldsymbol{y}_0 +\epsilon\boldsymbol{y}_1,\ldots, \boldsymbol{y}_0 +\epsilon\boldsymbol{y}_N\}$ . La *hipótesis de Stein* [denominada en [128]]
+
+$$
+\label{condition1}
+\forall R > 0, \quad \lim_{\|\boldsymbol{\omega}\| \to \infty } \sup_{\| \boldsymbol{\tau}\|<R} \bigg | \frac{\widehat{K}(\boldsymbol{\omega}+\boldsymbol{\tau} )}{\widehat{K}(\boldsymbol{\omega})} -1 \bigg |=0,
+$$
+
+proporciona una condición suficiente para el efecto de apantallamiento en este entorno (bajo algunas condiciones adicionales leves en $\widehat{K}$ y $N_\epsilon$ ), que se puede verificar en dimensiones $d=1$ y $d=2$ para campos aleatorios continuos pero no diferenciables de media cuadrática, para algunos diseños específicos $N_\epsilon$ [151]. El modelo Matérn con $K = {\cal M}_{\alpha,\nu}$ admite una expresión simple para su espectro[2 11.4.44]:
+
+$$
+\label{stein1}
+\widehat{{\cal M}}_{\nu,\alpha}(z)= \frac{\Gamma(\nu+d/2)}{\pi^{d/2} \Gamma(\nu)}
+%\frac{\sigma^2 (1/\alpha)^{2 \nu}}{((1/\alpha)^2+ z^2)^{\nu+d/2}}
+\frac{ \alpha^d}{(1+\alpha^2z^2)^{\nu+d/2}}
+, \; \; z \ge 0 ,
+$$
+
+a partir del cual se puede verificar [condition1\].
+
+De este modo se puede establecer el efecto de cribado para el modelo de Matérn, tanto bajo esquemas regulares como irregulares, justificando el uso de aproximaciones "locales" al predictor [blup\].
+
+## Matérn sobre variedades y grafos {#manifolds-graphs}
+
+Sea $M$ una variedad general. Una pregunta pragmática es si la función de correlación de Matérn [matern\] se puede componer con una métrica adecuada $g$ , definida en la variedad, para preservar la precisión positiva sobre $M$ . Para el caso de la esfera, una métrica natural es la distancia geodésica; la longitud del arco que conecta cualquier par de puntos ubicados sobre la capa esférica. Para esta métrica, $(x,y) \mapsto {\cal M}_{\nu,\alpha}(g(x,y))$ es una función de correlación solo para $0 < \nu \le 1/2$ [63]. Esta limitación se enfatiza en [3], quien propone la familia ${\cal F}$ , un modelo válido en la esfera y que tiene las mismas propiedades que la función de Matérn en términos de diferenciabilidad cuadrática media y dimensión fractal. La función Matérn en otras variedades generales ha sido estudiada por [98]. [69] propone una expansión espectral para definir una función de covarianza que imita el modelo de Matérn, pero [101] critica esta construcción por ser incorrecta ya que la expansión espectral no reproduce las mismas propiedades del modelo de Matérn.
+
+Lamentablemente, parece que la aplicabilidad limitada del modelo Matérn en cualquier espacio que no sea una superficie plana se extiende también a entornos más abstractos. Un elegante argumento de incrustación isométrica en [9] demuestra que la restricción $0 < \nu \le 1/2$ es necesaria cuando el espacio de entrada es un gráfico con aristas euclidianas. Un argumento más general en [112] demuestra que la misma restricción se hereda para un espacio cuasi métrico general dotado de una métrica geodésica. El notable esfuerzo de [30] proporciona un modelo que alguna vez es diferenciable en gráficos métricos. Es razonable concluir que, en general, se necesita alguna forma del enfoque SPDE, que analizamos a continuación en la sección [4.2](#SecSPDE), para extender el modelo de Matérn a una variedad general.

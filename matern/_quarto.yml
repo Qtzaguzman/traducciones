@@ -1,0 +1,50 @@
+project:
+  type: book
+  output-dir: _book
+
+lang: es
+
+book:
+  title: "El modelo Matérn"
+  subtitle: "Un recorrido por la estadística, el análisis numérico y el aprendizaje automático"
+  author:
+    - Emilio Porcu
+    - Moreno Bevilacqua
+    - Robert Schaback
+    - Chris J. Oates
+  chapters:
+    - index.qmd
+    - 01-introduccion.qmd
+    - 02-modelo-matern.qmd
+    - 03-estimacion-prediccion.qmd
+    - 04-estadistica-computacional.qmd
+    - 05-modelado-flexible.qmd
+    - 06-fuera-estadistica.qmd
+    - 07-mejoras.qmd
+    - 08-utilidad-mejoras.qmd
+    - 09-referencias.qmd
+    - 10-material-complementario.qmd
+  page-navigation: true
+  search: true
+
+execute:
+  enabled: false
+
+format:
+  html:
+    theme: cosmo
+    css: estilos.css
+    toc: true
+    toc-depth: 3
+    number-sections: true
+  pdf:
+    documentclass: scrbook
+    papersize: letter
+    fontsize: 10pt
+    toc: true
+    number-sections: true
+    colorlinks: true
+    geometry:
+      - margin=0.85in
+    include-in-header: preambulo.tex
+

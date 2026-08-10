@@ -1,0 +1,81 @@
+# El Modelo Matérn fuera de la estadística {#sec5}
+
+Esta sección explora el impacto del modelo Matérn en el análisis numérico y la teoría de la aproximación (Sección [6.1](#SecNAaAT)), el aprendizaje automático (Sección [6.2](#SecML)) y la teoría de la probabilidad (Sección [6.3](#PTaSP)).
+
+## Análisis numérico y teoría de aproximación {#SecNAaAT}
+
+El problema considerado aquí es *reconstruir* una función de valor real $f$ definida en un dominio $D \subset \mathbb{R}^d$ a partir de *valores de datos* dados $y_i = f(\boldsymbol{x}_i)$ disponibles en un conjunto $X_n =\{\boldsymbol{x}_1,\dots,\boldsymbol{x}_n\}$ de *ubicaciones de datos* distintas. A diferencia de la exposición estadística de la sección [3.1](#seclik), desde el punto de vista del análisis numérico no se supone que estos datos sean aleatorios de ninguna manera. Sin embargo, muchas de las expresiones matemáticas que anteriormente motivamos desde una perspectiva estadística aparecen también en la solución de esta tarea numérica. El vector de datos $\boldsymbol{Z}_n$ se reinterpreta como $\boldsymbol{Z}_n=(f({\boldsymbol x}_1),\ldots,f({\boldsymbol x}_n))^{\top}$ y la tarea es aproximar el valor $f(\boldsymbol{x})$ de la función desconocida $f$ en una ubicación sin muestrear $\boldsymbol{x}\in D \setminus X_n$ . Una solución natural es un interpolante de norma mínima
+
+$$
+\begin{aligned}
+s_{f,X_n,K} = \mathop{\mathrm{arg\,min}}_{s \in \mathcal{H}(K)} \|s\|_{\mathcal{H}(K)} \quad \text{s.t.} \quad \begin{array}{l} s(\boldsymbol{x}_i) = f(\boldsymbol{x}_i), \\ \hspace{30pt} i = 1,\dots,n, \end{array}
+\end{aligned}
+$$
+
+que recordamos fue la tercera propiedad de optimización a la que se hace referencia en la Sección [3](#Sec3). Así, usando nuevamente la *matriz núcleo* $\boldsymbol{R}_{n}=[K(\boldsymbol{x}_i,\boldsymbol{x}_j)]_{i,j=1}^n$ , el sistema $\boldsymbol{R}_{n}\boldsymbol{c}_n=\boldsymbol{Z}_n$ se resuelve para un vector de coeficiente fijo $\boldsymbol{c}_n$ que determina una combinación lineal
+
+$$
+s_{f,{X_n},K}(\boldsymbol{x})=\sum_{i=1}^n c_iK(\boldsymbol{x}_i,\boldsymbol{x}), \qquad \boldsymbol{x}\in D,
+$$
+
+en el lapso del *traduce* $K(\boldsymbol{x}_i,\cdot)$ . Esto se desprende fácilmente de la fórmula de reproducción ([eqrepro\]) y ([eqHKKK\]). La fórmula anterior es idéntica a ([blup\]) al configurar $\boldsymbol{x}=\boldsymbol{x}_0$ , y el valor resultante $s_{f,{X_n},K}(\boldsymbol{x})$ se interpreta como una aproximación numérica a $f(\boldsymbol{x})$ . La función de probabilidad logarítmica ([eq:17\]) puede verse de manera equivalente como una penalización de la norma del interpolante, ya que $\|s_{f,{X_n},K}\|^2_{{\cal H}(K)}=\boldsymbol{Z}_n^{\top} \boldsymbol{R}_{n}^{-1}\boldsymbol{Z}_n.$ 
+
+El cuarto principio de optimización en la sección [3](#Sec3) corresponde aquí al hecho de que la norma del error funcional $\epsilon_{\boldsymbol{x}}\;:\;f\mapsto f(\boldsymbol{x})-s_{f,{X_n},K}(\boldsymbol{x})$ en el espacio dual $\mathcal{H}(K)^*$ de ${\cal H}(K)$ es mínima bajo todos los algoritmos de reconstrucción lineal en ${\cal H}(K)$ que utilizan los mismos datos $\boldsymbol{Z}_n$ . La herramienta clave es la *función de potencia* $P_{K,{X_n}}$ , definida para todos los $\boldsymbol{x}\in D$ por
+
+$$
+\begin{aligned}
+& \hspace{-5pt} P_{K,{X_n}}(\boldsymbol{x}) \\
+& = \sup\left\{f(\boldsymbol{x}) \;:\; f\in {\cal H}(K),\;f({X_n})=0,\;\|f\|_{{\cal H}(K)}\le 1
+\right\}
+% &=&\|f\mapsto f(\bm{x})-s_{f,{X_n},K}(\bm{x})\|_{{\cal H}_K^*}.
+\end{aligned}
+$$
+
+Tiene la propiedad $P_{K,{X_n}}(\boldsymbol{x})
+=\|\epsilon_{\boldsymbol{x}}\|_{{\cal H}^*(K)}$ y conduce a límites de error óptimos de la forma
+
+$$
+\left|f(\boldsymbol{x}) - s_{f,{X_n},K}(\boldsymbol{x}) \right| \le P_{K,{X_n}}(\boldsymbol{x}) \|f\|_{{\cal H}_K} .
+$$
+
+para todo $\boldsymbol{x}\in D$ y $f\in {\cal H}(K)$ . Se puede calcular numéricamente utilizando la matriz del núcleo basada en ${X_n}\cup \{\boldsymbol{x}\}$ , pero omitimos el detalle. Sorprendentemente, la función de potencia coincide con la raíz cuadrada de la *varianza kriging*[141], dando la varianza del error de kriging en $\boldsymbol{x}$ para ubicaciones de datos determinadas ${X_n}$ y núcleo $K$ .
+
+El análisis del error de aproximación en este contexto se reduce así al análisis de la función de potencia y, a su vez, al análisis del espacio $\mathcal{H}(K)$ . De ([eqHK\]) y ([stein1\]), el RKHS generado por el núcleo Matérn ${\cal M}_{\nu,1}$ tiene el producto interno
+
+$$
+\label{eqHKM}
+ \langle f,g\rangle_{{\cal H}({\cal M}_{\nu,1})}=\int_{\mathbb{R}^d}\frac{\hat f(\boldsymbol{\omega})
+\overline{\hat g(\boldsymbol{\omega})}}{(1+\|\boldsymbol\omega\|^2)^{\nu+d/2}}\mathrm{d}\boldsymbol{\omega}
+$$
+
+hasta constantes, que reconocemos como el producto interno del *espacio de Sobolev* clásico $W_2^{\nu+d/2}(\mathbb{R}^d)$ . Según el teorema de incrustación de Sobolev, los elementos de este espacio son funciones continuas bien definidas siempre que $\nu > 0$ . Este espacio es un escenario canónico para el análisis matemático de PDE, una conexión que analizamos en la Sección [4.4](#SecQua). En resumen, el uso de núcleos Matérn produce técnicas de recuperación óptimas para funciones en espacios de Sobolev a partir de datos de muestra dados. Las recuperaciones generalizadas que utilizan datos derivados producen métodos numéricos *sin malla* para resolver PDE en espacios de Sobolev, incluido el método de *colocación simétrica* que utiliza datos derivados para el PDE basados ​​en[172]y comparte propiedades similares de optimización del espacio de Hilbert[137]. El uso del núcleo de Matérn está fuertemente motivado por el hecho de que la teoría PDE a menudo implica que las soluciones se encuentran en espacios de Sobolev. Por otro lado, también hay buenos argumentos para sustituir los núcleos Matérn por poliarmónicos.[138; 50].
+
+Se pueden encontrar muchos otros resultados sobre problemas de recuperación deterministas utilizando núcleos en [166], mientras que las aplicaciones están en [139] y los programas MATLAB combinados con la teoría esencial están en [58].
+
+En análisis numérico y teoría de aproximación, Matérn y otros núcleos se utilizan normalmente para valores bastante grandes de su parámetro de suavidad, porque buscan resolver una tarea de interpolación en lugar de una de regresión. [114] demostró que las tasas de convergencia dependen del mínimo de la suavidad de la función $f$ que proporciona los datos y el núcleo; un núcleo Matérn *mal especificado*, para el cual el parámetro de suavidad $\nu$ se considera demasiado grande en relación con la suavidad de $f$ , produce un error que converge a la misma velocidad que habríamos logrado si $\nu$ se hubiera especificado correctamente. Por otro lado, [159] demuestra en el mismo escenario que el error de predicción se vuelve más sensible a la propiedad de relleno de espacio de los puntos de diseño. En particular, las tasas de convergencia óptimas requieren también que se controle la *cuasi-uniformidad* del diseño experimental.
+
+Por supuesto, el uso de núcleos en análisis numérico y teoría de aproximación requiere la estimación de los parámetros del núcleo. La cantidad $\sigma$ no aparece en la matriz de correlación $\boldsymbol{R}_{n}$ , pero el parámetro de escala $\alpha$ tiene una fuerte influencia en el error del interpolador. Existe una vasta literatura sobre *estimación de escala* que se basa parcialmente en nociones estadísticas como ML (ver referencias en la Sección 3). Por otro lado, alternativas específicas al modelo de Matérn, como los núcleos poliarmónicos de la Sección [7.3](#SecPoly), pueden omitir la estimación de escala debido a la notable propiedad de que el interpolante es independiente del valor del parámetro de escala utilizado. Consulte [166] y la sección [7.3](#SecPoly).
+
+## Aprendizaje automático {#SecML}
+
+Los métodos de núcleo son una rama importante de la investigación del aprendizaje automático, donde los núcleos se utilizan de forma rutinaria para resolver una variedad de tareas de aprendizaje supervisadas y no supervisadas. En comparación con la configuración de interpolación de la sección [6.1](#SecNAaAT), los datos en el aprendizaje automático generalmente se observan con ruido, lo que requiere que se especifique una función de probabilidad o de pérdida.
+
+El modelo de Matérn suele ser conveniente para el análisis de métodos de núcleo; por ejemplo, [160] proporciona condiciones suficientes para que las tasas de convergencia de la regresión de la cresta del núcleo de Matérn excedan las tasas minimax estándar tanto bajo la norma $L_2$ como bajo la norma del RKHS. Sin embargo, la presencia de ruido en los datos puede plantear un desafío sustancial para la selección de parámetros de suavidad como $\nu$ en el modelo Matérn. [81] demuestra que la estimación ML de $\nu$ no puede *subestimar* asintóticamente la verdad bajo asintóticas de dominio fijo; es decir, si la función de regresión verdadera tiene una suavidad de Sobolev $\nu_0 + d/2$ , entonces la estimación del parámetro de suavidad no puede ser asintóticamente menor que $\nu_0 + d/2$ , pero esto en sí mismo no es una motivación convincente para usar ML [82]. Como resultado de estos desafíos adicionales, la práctica estándar es mantener el núcleo general en la medida de lo posible al desarrollar la metodología y, en la medida de lo posible, aprender una forma adecuada para el núcleo utilizando los criterios de selección de datos y modelos. Sin embargo, la reciente metodología de aprendizaje automático para datos no euclidianos depende del enfoque SPDE y, como consecuencia, se están utilizando explícitamente los modelos de Matérn y relacionados.
+
+A medida que los tipos de datos que los investigadores buscan analizar se vuelven más heterogéneos y estructurados, ha habido una demanda de modelos de procesos gaussianos flexibles definidos en dominios no euclidianos como variedades y dominios discretos basados ​​en gráficos. Bajo el marco de los procesos gaussianos, [35] propuso evitar la solución numérica del SPDE [SPDE\] y en su lugar trabajar con una aproximación de rango finito al modelo de proceso gaussiano. En concreto, consideran la SPDE en ([SPDE\]) apropiadamente adaptada a una variedad riemanniana $M$ , para la cual el correspondiente modelo de Matérn admite una expansión en serie del tipo
+
+$$
+\sum_{n=0}^{\infty} \left ( \frac{2 \nu}{\alpha^2} + \lambda_n \right )^{-\nu-d/2} f_{n}(\boldsymbol{x})f_n(\boldsymbol{x}'), \qquad \boldsymbol{x},\boldsymbol{x}' \in M
+$$
+
+donde $\{\lambda_n\}_{n=0}^{\infty}$ y $\{f_n\}_{n=0}^{\infty}$ son, respectivamente, las secuencias de valores propios y funciones propias del operador de Laplace-Beltrami $- \Delta_M$ . Los autores proponen resolver primero numéricamente las funciones propias principales $\{f_i\}_{i=0}^n$ del operador de Laplace-Beltrami y luego trabajar con un proceso gaussiano de rango finito cuyas realizaciones son combinaciones lineales del $\{f_i\}_{i=0}^n$ . Aunque resolver el problema propio puede ser más difícil que resolver numéricamente el SPDE, los autores sostienen que el almacenamiento en caché de las funciones propias puede conducir a un ahorro de costos en entornos donde se deben resolver múltiples tareas en el mismo colector. Este enfoque se extiende ingeniosamente a gráficos no dirigidos por [34], y ha tenido un impacto directo en los procesos gaussianos definidos en redes neuronales [80], el condicionamiento de procesos gaussianos [171], la inteligencia de simulación en IA [93] y la extensión a los métodos del núcleo dentro de los gráficos en tiempo cruzado [115]. Otras aplicaciones incluyen el muestreo de Thomson en sistemas de información neuronal [161], la optimización bayesiana en robótica [79] y la regresión de procesos gaussianos en espacios métricos [90].
+
+## Teoría de la probabilidad y procesos estocásticos {#PTaSP}
+
+El modelo de Matérn está bien estudiado desde el punto de vista de la teoría de la probabilidad y del proceso estocástico. Desde la perspectiva de la regularidad, [140] resume las propiedades de los campos aleatorios gaussianos con funciones de covarianza de Matérn; las trayectorias muestrales son $k$ veces diferenciables en el sentido cuadrático medio si y solo si $\nu >k$ . Bajo la misma condición, las trayectorias muestrales tienen un exponente del espacio de Sobolev (local) que es idénticamente igual a $k$ . Además, un campo aleatorio gaussiano con covarianza de Matérn tiene una dimensión fractal que es idénticamente igual a $\min (\nu, d)$ , siendo $d$ la dimensión del espacio euclidiano en el que se define el campo aleatorio. Para campos aleatorios no gaussianos con covarianza Matérn, [86] estudia las propiedades de continuidad.
+
+Se han investigado varias otras propiedades del modelo de Matérn. [85] estudia campos aleatorios fraccionarios bajo el escenario de ecuaciones estocásticas de calor fraccional bajo un modelo de Matérn; consulte también [96]. En [95] se estudiaron campos aleatorios definidos sobre la bola unitaria incrustada en $\mathbb{R}^d$ , con una función de covarianza que es la restricción del modelo de Matérn a un rango finito. En [94] se estudiaron campos aleatorios con valores tensoriales con una clase equivalente de funciones de covarianza de Matérn. [157] considera espectros angulares para campos aleatorios no gaussianos con la función de covarianza de Matérn. Una contribución reciente [158] proporciona una conexión interesante entre el modelo de Matérn y ciertas representaciones ARMA laplacianas de una clase de procesos estocásticos. [99] muestran que el proceso de Matérn es una versión amortiguada del movimiento browniano fraccional. [100] estudia campos aleatorios con una covarianza de Matérn generalizada obtenida como solución a la ecuación diferencial estocástica fraccionaria con dos órdenes fraccionarios, lo que permite a los autores deducir las propiedades de la ruta muestral del campo aleatorio asociado. [10] proporciona extensiones espacio-temporales de los campos aleatorios de Matérn mediante ecuaciones estocásticas de Helmholtz.
+
+Según N. Leonenko[^1], uno de los principales contribuyentes a esta literatura, la importancia del modelo de Matérn se basa en el teorema de dualidad [72 Theorem 1] que proporciona una relación explícita entre ciertas clases de funciones características de vectores aleatorios simétricos y su densidad. En concreto, la densidad espectral asociada al modelo de Matérn es en sí misma una función de covarianza, denominada función de covarianza multicuadrárica inversa de Cauchy, que permite parametrizar el efecto Hurst del campo aleatorio gaussiano asociado.
+
+Se completa así nuestro recorrido por el panorama científico a través del objetivo del modelo Matérn. Nuestra atención se centra ahora en el futuro y en las prometedoras mejoras que se pueden realizar en el modelo Matérn.

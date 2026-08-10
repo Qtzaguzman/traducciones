@@ -1,0 +1,155 @@
+# Modelado a través de Matérn en escenarios no convencionales: la versión extendida {#Appendix}
+
+Se podría objetar que la clase Matérn está limitada a campos aleatorios con valores escalares que son estacionarios e isotrópicos. Si bien esto es cierto, también lo es que la clase Matérn representa la base para escenarios mucho más sofisticados. Los enumeramos a lo largo.
+
+**1.** Campos aleatorios con valores escalares.
+
+**1.** *Anisotropías.* Si la dimensión espacial se desarrolla en direcciones preferenciales, la isotropía ya no es una suposición realista para el modelado espacial. En [7] se cuestionan varios tipos de anisotropías y se muestra que la clase Matérn se puede componer con deformaciones *ad hoc* para tener en cuenta direcciones preferenciales en términos de dependencia espacial.
+
+**2.** *No estacionario.* El núcleo Matérn ha sido utilizado por [119] para construir modelos no estacionarios. Considere una colección de distribuciones gaussianas indexadas por su media, de modo que el elemento con media $\boldsymbol{x}$ tenga la matriz de covarianza $\Sigma_{\boldsymbol{x}}$ . Deje
+
+$$
+Q_{\boldsymbol{x},\boldsymbol{y}}= (\boldsymbol{x}-\boldsymbol{y})^{\top} \left ( \frac{\Sigma_{\boldsymbol{x}}+\Sigma_{\boldsymbol{y}}}{2}\right )^{-1}(\boldsymbol{x}-\boldsymbol{y})
+$$
+
+y
+
+$$
+\begin{aligned}
+K(\boldsymbol{x},\boldsymbol{y})&=& \Big | \Sigma_{\boldsymbol{x}}\Big |^{1/4} \Big | \Sigma_{\boldsymbol{y}}\Big |^{1/4} \Bigg | \frac{\Sigma_{\boldsymbol{x}}+\Sigma_{\boldsymbol{y}}}{2}\Bigg |^{-1/2} {\cal M}_{\nu,\alpha} \left ( \sqrt{Q_{\boldsymbol{x},\boldsymbol{y}}} \right).
+ \end{aligned}
+$$
+
+Entonces, $K$ es positivo definido. Este enfoque se generalizó recientemente en[132]. Alternativamente, se puede inducir la no estacionariedad *deformando* las entradas de la función de covarianza de Matérn, como $K(\boldsymbol{x},\boldsymbol{y}) = \mathcal{M}_{\nu,\alpha}(\|\boldsymbol{w}(\boldsymbol{x})-\boldsymbol{w}(\boldsymbol{y})\|)$ por algún difeomorfismo $\boldsymbol{w} : \mathbb{R}^d \rightarrow \mathbb{R}^d$ que a su vez puede parametrizarse. El caso en el que $\boldsymbol{w}$ está parametrizado por una red neuronal profunda fue explorado en[170].
+
+**3.** *Gráficos y espacios cuasimétricos.* [9] considera gráficos con aristas euclidianas, equipados con la distancia geodésica sobre el gráfico o la métrica de resistencia. Demuestran que ${\cal M}_{\nu,\alpha}$ se puede componer con la métrica de resistencia sobre el gráfico proporcionado $0<\nu\le 1/2$ . Más recientemente, [112] proporciona una generalización de esta configuración al considerar espacios cuasimétricos. Al parecer, en este caso se aplican restricciones similares. Recientemente, [32] adoptó un enfoque diferente para crear campos aleatorios con su estructura de covarianza en gráficos métricos. La versión espacio-temporal de la clase Matérn, por ser el espacio un grafo con aristas euclidianas, ha sido considerada por [155] y por [127].
+
+**4.** *Espacio-tiempo.* Para un campo aleatorio gaussiano de espacio-tiempo $\{Z(\boldsymbol{x},t), \; \boldsymbol{x} \in \mathbb{R}^{d+1}, t \in \mathbb{R}\}$ , una suposición típica de segundo orden es que la covarianza es isotrópica en el espacio y estacionaria en el tiempo. Es decir,
+
+$$
+\label{space-time}
+ \begin{array}{rcl} 
+\mathrm{Cov} \left ( Z(\boldsymbol{x},t),Z(\boldsymbol{y},t')\right ) =K \left ( \|\boldsymbol{x}-\boldsymbol{y}\|,|t-t'|\right )
+ \end{array}
+$$
+
+para todo $(\boldsymbol{x},t),(\boldsymbol{y},t') \in \mathbb{R}^d \times \mathbb{R}$ . La función Matérn se ha utilizado como componente básico de dicha estructura. De particular interés son las funciones de covarianza *no separables*, que permiten una interacción entre el espacio y el tiempo, y en este contexto[62]y[178]demostrar que
+
+$$
+\label{maast}
+ K(x,u)= \frac{\sigma^2}{\psi(u^2)} {\cal M}_{\nu,\alpha} \left ( \frac{x}{\psi(u^2)}\right ), \;x,u \ge 0,
+$$
+
+generar una función de covarianza espacio-temporal válida del tipo ([space-time\]). Aquí, $\psi$ es una función estrictamente positiva que tiene una derivada completamente monótona[21].
+
+**5.** *Campos no gaussianos.* Al considerar las transformaciones $w : \mathbb{R}\rightarrow \mathbb{R}$ , se puede utilizar el modelo de Matérn como base para una variedad de modelos no gaussianos $\tilde{Z}(\boldsymbol{x}) = w(Z(\boldsymbol{x}))$ . Sin embargo, la función de covarianza de $\tilde{Z}$ no será Matérn en general. La pregunta de si existen procesos no gaussianos cuya función de covarianza sea, sin embargo, de clase Matérn fue respondida positivamente en [1]. [174] ha propuesto campos aleatorios transgaussianos con función de covarianza Matérn. [29] y posteriormente [164] han proporcionado construcciones basadas en SPDE para campos Matérn no gaussianos. Se puede obtener una clase general de campos no gaussianos con núcleo $g({\cal M}_{\nu,\alpha})$ con $g(\cdot)$ una función adecuada que preserva la definición positiva mediante una transformación de (réplicas independientes de) un campo gaussiano (ver, por ejemplo, [120; 173; 24; 113]).
+
+**6.** *Mezclas de campos gaussianos.* Se puede modelar un fenómeno del mundo real como una superposición $Z_1 + Z_2$ donde se podría seleccionar $Z_1$ para capturar una tendencia general (por ejemplo, $Z_1(\boldsymbol{x}) = c_1 \phi_1(\boldsymbol{x}) + \dots + c_p \phi_p(\boldsymbol{x})$ para algunas funciones fijas $\phi_1,\dots,\phi_p$ y algunos coeficientes $\boldsymbol{c} \in \mathbb{R}^p$ y $Z_2$ podría ser Matérn, para capturar el nivel de suavidad del proceso. Dichos procesos aparecen en la regresión lineal bayesiana, donde el coeficiente $\boldsymbol{c}$ se considera aleatorio debido a la incertidumbre epistémica, por ejemplo, $\boldsymbol{c} \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma})$ , y tanto $\boldsymbol{c}$ como $Z_2$ deben inferirse conjuntamente. La mezcla $Z_1 + Z_2$ vuelve a ser un campo aleatorio gaussiano.
+
+**7.** *Modelos Matérn con colas modificadas.* La función de covarianza de Matérn decae exponencialmente con la distancia. Esto puede ser un inconveniente en presencia de mucha memoria. Algunas clases de funciones de covarianza permiten indexar memoria larga versus corta en datos espaciales. El Cauchy [65] generalizado y el Dagum [22] son ejemplos destacados de familias que permiten indexar tanto las dimensiones fractales como la memoria larga, también denominado efecto Hurst. Sin embargo, estas familias no permiten parametrizar la suavidad de la misma manera que la clase Matérn. Este dilema ha preocupado a varios científicos. A continuación describimos los enfoques dedicados a modificar las colas del modelo de Matérn preservando (a) la definición positiva y (b) el comportamiento local, a su vez conectado con la diferenciabilidad cuadrática media y la parametrización del espacio de Sobolev. Cada una de las contribuciones a continuación tiene diferentes motivaciones, como se explica a lo largo.
+
+**1.** *Modelos Matérn con colas periódicas.* [91] ha propuesto una modificación de la densidad espectral del modelo Matérn. La idea principal es proponer una clase isotrópica de densidades espectrales, $\widetilde{M}_{\nu,\alpha,\sigma^2}$ , que esté conectada a la familia Matérn $\widehat{M}_{\nu,\alpha,\sigma^2}$ a través de la identidad
+
+$$
+\label{laga}
+ \widetilde{M}_{\nu,\alpha,\sigma^2}(z)=\left( b^2+ z^2 \right)^\xi \widehat{\mathcal{M}}_{\nu,\alpha,\sigma^2}(z),
+$$
+
+con $b\geq 0$ y $\xi < \nu$ . While $b$ es un parámetro de rango adicional, $\xi$ está relacionado con la fluidez del proceso respectivo. Más precisamente, el campo aleatorio es $k$ -veces el cuadrado medio diferenciable si y solo si $\nu-\xi > k$ . En el caso límite $\xi\rightarrow 0$ , se recupera el modelo tradicional de Matérn.
+
+Esta escala en la densidad espectral produce un cambio en la moda del espectro; por tanto, es particularmente útil para obtener procesos con fuertes periodicidades. La función de covarianza asociada a ([laga\]) no tiene una expresión explícita conocida, por lo que se deben emplear metodologías estadísticas en el dominio espectral cuando se trata de este modelo.
+
+**2.** *Modelos híbridos.* Otra generalización del modelo de Matérn aprovecha el hecho de que puede escribirse como una mezcla de escalas de un núcleo gaussiano frente a una función de densidad de probabilidad
+
+$$
+\label{mixture}
+ \mathcal{M}_{\nu,\alpha}(x) = \int_0^\infty \exp(-u x^2) \pi_{IG}(u;\nu,1/(4\alpha^2) ) \text{d}u
+$$
+
+del tipo gamma inverso.[5]hacer uso de la identidad anterior para crear modelos *híbridos* que permitan preservar las propiedades locales del modelo Matérn convencional al tiempo que logran comportamientos más flexibles a grandes distancias. Una posible construcción híbrida, llamada Matérn-Cauchy y denotada $\mathcal{MC}_{\nu_1,\nu_2,\alpha,\xi}$ , se logra a través de
+
+$$
+\label{mc} \mathcal{MC}_{\nu_1,\nu_2,\alpha,\xi}(x)
+= \int_0^\xi \exp(-u x^2) \pi_G(u;\nu_1/2,\alpha) \text{d}u + \int_\xi^\infty \exp(-u x^2) \pi_{IG}(u;\nu_2,1/(4\alpha^2) ) \text{d}u.
+$$
+
+Here, $\pi_G$ es la función de densidad de probabilidad gamma, con una parametrización de tasa de forma, $\pi_{IG}$ es la densidad en ([inverse_gamma\]), $\alpha > 0$ es un parámetro de rango, $\nu_1 > 0$ controla la tasa polinómica de decadencia de la covarianza, $\nu_2 > 0$ indexa la diferenciabilidad cuadrática media, y $\xi \geq 0$ es un parámetro adicional que equilibra las contribuciones de Matérn y Cauchy a la función de covarianza total. Como $\xi\rightarrow 0$ , el modelo híbrido tiende a un Matérn covarianza. En [5] se proporciona una expresión en formato cerrado para este modelo. Tenga en cuenta que esta función de covarianza es definida positiva en cualquier dimensión y es un competidor natural del modelo ([anciano\]).
+
+Otro modelo híbrido se construye en [5] reemplazando el núcleo gaussiano en ([mixture\]) con una diferencia de núcleos gaussianos
+
+$$
+\left(a \exp(-u b x^2) - \exp(-u x^2)\right) (a-1)^{-1},
+$$
+
+donde $a$ y $b$ satisfacen la condición $1<b < a^{2/d}$ , para obtener un núcleo definido positivo en $\mathbb{R}^d$ [130]. El modelo resultante tiene un comportamiento local de tipo Matérn y permite correlaciones negativas a grandes distancias (efecto agujero). Los parámetros $a$ y $b$ controlan la nitidez del efecto del agujero. Cuando $a$ es arbitrariamente grande, se recupera el modelo Matérn convencional. Las expresiones algebraicamente cerradas se informan en [5].
+
+**2.** Campos aleatorios con valores vectoriales.\
+Sea $\{\boldsymbol{Z}(\boldsymbol{x}), \; \boldsymbol{x} \in \mathbb{R}^d\} \subset \mathbb{R}^p$ un campo aleatorio variable $p$ con mapeo de covarianza isotrópica $\boldsymbol{K}: \mathbb{R}^d \to \mathbb{R}^{p \times p}$ que tiene elementos $K_{ij}$ definidos como
+
+$$
+K_{ij}(\boldsymbol{x})= \mathrm{cov} \left ( Z_i(\boldsymbol{0}),Z_j(\boldsymbol{x})\right ), \; \boldsymbol{0}, \boldsymbol{x} \in \mathbb{R}^d.
+$$
+
+Específicamente, $K_{ii}$ y $K_{ij}$ se denominan covarianza automática y cruzada función.
+
+**1.** *Espacial multivariado.* Ha habido una gran cantidad de enfoques relacionados con el modelado espacial multivariado, y se remite al lector a [60]. [64] han propuesto una estructura de covarianza multivariada del tipo
+
+$$
+K_{ij}(\boldsymbol{x}) = \sigma_{ii} \sigma_{jj} \rho_{ij} {\cal M}_{\nu_{ij},\alpha_{ij}} (\|\boldsymbol{x}\|), \; \boldsymbol{x} \in \mathbb{R}^d,
+$$
+
+dónde $\sigma_{ii}^2$ es la varianza de $Z_i$ de $\boldsymbol{Z}$ , y $\rho_{ij}$ es el coeficiente de correlación colocado. Hay restricciones en los parámetros. $\nu_{ij}, \alpha_{ij}$ y $\rho_{ij}$ para preservar la precisión positiva y, a menudo, las restricciones sobre los coeficientes de correlaciones colocados $\rho_{ij}$ son graves. Esto motivó enfoques alternativos para aliviar las restricciones paramétricas, y se remite al lector a [11] y, más recientemente, a [54].
+
+**2.** *Espacio-tiempo multivariado.* La configuración anterior se puede generalizar al espacio-tiempo considerando $\{ \boldsymbol{Z}(\boldsymbol{x},t), \; \boldsymbol{x} \in \mathbb{R}^d, t\in \mathbb{R}\} \subset \mathbb{R}^p$ un campo aleatorio variable $p$ con mapeo de covarianza isotrópica $\boldsymbol{K}: \mathbb{R}^d \times \mathbb{R}\to \mathbb{R}^{p \times p}$ que tiene elementos $K_{ij}$ definidos como
+
+$$
+K_{ij}(\boldsymbol{x},u)= \mathrm{cov} \left ( Z_i(\boldsymbol{0},t),Z_j(\boldsymbol{x},t+u)\right )
+$$
+
+para $\boldsymbol{0}, \boldsymbol{x} \in \mathbb{R}^d$ , $t,u \in \mathbb{R}$ . [36] considere asignaciones $K_{ij}$ del tipo
+
+$$
+K_{ij}(\boldsymbol{x},u) = \frac{\sigma_{ii} \sigma_{jj} \rho_{ij}}{\psi(u^2)^{d/2}} {\cal M}_{\nu_{ij},\alpha_{ij} \psi(u^2)} (\|\boldsymbol{x}\|)
+$$
+
+para $\boldsymbol{x} \in \mathbb{R}^d$ , $u \in \mathbb{R}$ y una función continua y de valor positivo adecuada $\psi$ . Esta configuración ha sido generalizada recientemente por [6] y mediante un enfoque técnico por [125]: para ambas contribuciones, la idea es reemplazar (puntualmente) el mapeo $\psi$ con el mapeo $\boldsymbol{\psi}$ que tiene elementos continuos y estrictamente positivos $\psi_{ij}$ .
+
+**3.** *Multivariado No Estacionario.* [88] deriva una clase de funciones de covarianza con valores matriciales donde las funciones de covarianza directa y cruzada pertenecen a la clase Matérn. Se permite que los parámetros de la clase Matérn varíen con la ubicación, lo que produce variaciones locales, rangos locales, anisotropías geométricas locales y suavidades locales.
+
+Definir $\Sigma_{i,\boldsymbol{x}} = \Sigma_i(\boldsymbol{x}): \mathbb{R}^d \to \mathbb{R}^{d \times d}$ y suponer $\Sigma_i(\boldsymbol{x})$ es positivo definido para todos los $i$ y todo $\boldsymbol{x} \in \mathbb{R}^d$ . Dejar
+
+$$
+Q_{ij;\boldsymbol{x},\boldsymbol{y}}= (\boldsymbol{x}-\boldsymbol{y})^{\top} \left ( \frac{\Sigma_{i,\boldsymbol{x}}+\Sigma_{j,\boldsymbol{y}}}{2}\right )^{-1}(\boldsymbol{x}-\boldsymbol{y})
+$$
+
+y
+
+$$
+K_{ij}(\boldsymbol{x},\boldsymbol{y})= \rho_{ij}\sigma_{i,\boldsymbol{x}} \sigma_{j,\boldsymbol{y}} {\cal M}_{\nu,\alpha} \left ( \sqrt{Q_{ij;\boldsymbol{x},\boldsymbol{y}}} \right ).
+$$
+
+Entonces, $\boldsymbol{K}(\cdot,\cdot) = [K_{ij}(\cdot,\cdot)]_{i,j=1}^p$ es positivo definido.
+
+**4.** *Matern multivariado con hoyuelo.* En un contexto espacial bivariado, cada elemento de la función de covarianza matricial de Matérn admite una representación de mezcla de escala como en ([mixture\]). [4] consideró una modificación de dicha mezcla para obtener una generalización del modelo de Matérn, dada por
+
+$$
+\begin{aligned}
+ \label{dimple}
+ \widetilde{K}_{ij}(x) = \sigma_{ii}\sigma_{jj}\rho_{ij} \int_0^\infty \exp(-u x^2) 
+g_{ij}(u;\xi) \times \pi_{IG}(u;\nu_{ij},1/(4\alpha_{ij}^2) ) \text{d}u,
+ \end{aligned}
+$$
+
+dónde $g_{ii}(u;\xi) = 1$ , y $g_{ij}(u;\xi) = 1\{u \leq \xi\} - 1\{u \geq \xi\}$ para $i\neq j$ , con $1\{\cdot\}$ siendo la función indicadora y $\xi$ un parámetro no negativo, y donde $\pi_{IG}$ es la función de densidad de probabilidad de una variable aleatoria gamma inversa, es decir
+
+$$
+\label{inverse_gamma}
+ \pi_{IG}(z; a,b) = \frac{b^a}{\Gamma(a)}z^{-a-1} \exp(-b/z), \;z>0.
+$$
+
+Observe que los elementos diagonales de la covarianza valorada matricial no se modifican; de esta manera se mantienen los atractivos atributos locales del modelo Matérn. Esta construcción sólo tiene un impacto en las covarianzas cruzadas. De hecho, [4] demostró que $\widetilde{K}_{12}(x)$ no es una función monótonamente decreciente de $x$ . Más precisamente, la covarianza cruzada puede alcanzar su valor máximo a una distancia estrictamente positiva. Esta propiedad se llamó hoyuelo cruzado en [4]. El parámetro $\xi$ regula la intensidad del hoyuelo en cruz. Claramente, el modelo bivariado tradicional de Matérn es un caso límite de esta construcción ( $\xi\rightarrow \infty$ ). [4] proporciona expresiones de formato cerrado para ([dimple\]). Además, $\nu_{12} = 1/2+n$ , $n\in\mathbb{N}$ , $\widetilde{K}_{12}(x)$ se pueden expresar en términos de funciones de error y funciones exponenciales.
+
+**3.** Direcciones, formas y curvas. El modelo Matérn es fundamental para el estudio de los procesos direccionales. [18] formaliza las nociones de procesos direccionales en diferencias finitas y procesos direccionales derivados con especial énfasis en la función de covarianza de Matérn. Proporcionan resultados completos de la teoría de la distribución bajo los supuestos de un modelo de proceso gaussiano estacionario (con covarianza de Matérn), ya sea para los datos o para efectos aleatorios espaciales.
+[16] introdujo el movimiento bayesiano para medir los gradientes relacionados con las curvas a través de los límites del movimiento. Las propiedades de suavidad del modelo Matérn han demostrado ser exitosas dentro de dicho marco. [131] ha propuesto enfoques de modelado de gradientes temporales utilizando el modelo Matérn.
+
+[^1]: Comunicación personal, enero de 2023.
