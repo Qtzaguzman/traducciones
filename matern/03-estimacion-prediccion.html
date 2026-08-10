@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>3&nbsp; Estimación y Predicción con el Modelo Matérn – El modelo Matérn</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./04-estadistica-computacional.html" rel="next">
+<link href="./02-modelo-matern.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-485d01fc63b59abcd3ee1bf1e8e2748d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Sin resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="estilos.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./03-estimacion-prediccion.html"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Estimación y Predicción con el Modelo Matérn</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Buscar" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">El modelo Matérn</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Buscar"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Presentación</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-introduccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introducción</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-modelo-matern.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">El modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-estimacion-prediccion.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Estimación y Predicción con el Modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-estadistica-computacional.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">El Modelo Matérn en Estadística Computacional</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-modelado-flexible.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Modelado flexible con Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06-fuera-estadistica.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">El Modelo Matérn fuera de la estadística</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-mejoras.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Mejoras del Modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08-utilidad-mejoras.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">¿Son útiles las mejoras del modelo Matérn?</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09-referencias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Referencias</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10-material-complementario.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Modelado a través de Matérn en escenarios no convencionales: la versión extendida</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Tabla de contenidos</h2>
+   
+  <ul>
+  <li><a href="#seclik" id="toc-seclik" class="nav-link active" data-scroll-target="#seclik"><span class="header-section-number">3.1</span> Estimación utilizando la máxima verosimilitud</a>
+  <ul class="collapse">
+  <li><a href="#ida" id="toc-ida" class="nav-link" data-scroll-target="#ida"><span class="header-section-number">3.1.1</span> Asintóticas de dominio crecientes.</a></li>
+  <li><a href="#asintóticas-de-dominio-fijo." id="toc-asintóticas-de-dominio-fijo." class="nav-link" data-scroll-target="#asintóticas-de-dominio-fijo."><span class="header-section-number">3.1.2</span> Asintóticas de dominio fijo.</a></li>
+  </ul></li>
+  <li><a href="#pprr" id="toc-pprr" class="nav-link" data-scroll-target="#pprr"><span class="header-section-number">3.2</span> Predicción y efecto de apantallamiento</a></li>
+  <li><a href="#manifolds-graphs" id="toc-manifolds-graphs" class="nav-link" data-scroll-target="#manifolds-graphs"><span class="header-section-number">3.3</span> Matérn sobre variedades y grafos</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span id="Sec3" class="quarto-section-identifier"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Estimación y Predicción con el Modelo Matérn</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Sea <span class="math inline">\(D\subset \mathbb{R}^d\)</span> un subconjunto de <span class="math inline">\(\mathbb{R}^d\)</span> . Considere un conjunto <span class="math inline">\(X_n = \{\boldsymbol{x}_1,\dots,\boldsymbol{x}_n\}\)</span> de ubicaciones (distintas) en <span class="math inline">\(D\)</span> , en el que se observan los valores <span class="math inline">\(\boldsymbol{Z}_n=(Z(\boldsymbol{x}_1),\ldots,Z(\boldsymbol{x}_n))^{\top}\)</span> del campo aleatorio gaussiano <span class="math inline">\(Z\)</span> , definido en la sección <a href="01-introduccion.html#background">1.1</a>. Un problema importante tiene que ver con la <em>predicción</em> de los valores <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> en una ubicación no observada <span class="math inline">\(\boldsymbol{x}_0\in D \setminus X_n\)</span> . Entonces un predictor especialmente natural para <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> es</p>
+<p><span class="math display">\[
+\label{blup}
+\widehat{Z}_{n} =\boldsymbol{c}_n^\top
+\boldsymbol{R}_{n}^{-1}\boldsymbol{Z}_n
+\]</span></p>
+<p>con el vector <span class="math inline">\([\boldsymbol{c}_n]_i= K(\boldsymbol{x}_0,\boldsymbol{x}_i)\)</span> y la <em>matriz del núcleo</em> <span class="math inline">\([\boldsymbol{R}_{n}]_{i,j} = K(\boldsymbol{x}_i,\boldsymbol{x}_j)\)</span> . El predictor [blup] se puede motivar desde múltiples direcciones. Clásicamente, [blup] está motivado como el mejor predictor lineal insesgado (BLUP) para <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> , y a menudo se lo conoce como el predictor <em>kriging simple</em> de <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> [44]. Desde una perspectiva moderna, donde el papel de la estimación insesgada se cuestiona cada vez más, podemos motivar esta elección utilizando propiedades de optimización alternativas, que incluyen:</p>
+<p><strong>1.</strong> es la expectativa de <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> condicionada a la realización de <span class="math inline">\(\boldsymbol{Z}_n\)</span> ;</p>
+<p><strong>2.</strong> es la estimación óptima (es decir, la acción de Bayes) para <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> basada en el conjunto de datos <span class="math inline">\(\boldsymbol{Z}_n\)</span> , bajo pérdida de error al cuadrado [116 Section 13.3];</p>
+<p><strong>3.</strong> produce la interpolación mínima de la norma RKHS de los datos evaluados en <span class="math inline">\(\boldsymbol{x}_0\)</span> , por la Sección <a href="06-fuera-estadistica.html#SecNAaAT">6.1</a>;</p>
+<p><strong>4.</strong> es el algoritmo para aproximar <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> a partir de <span class="math inline">\(\boldsymbol{Z}_n\)</span> el que minimiza el peor de los errores en el sentido de la complejidad basada en la información [116 Section 10.2] y la teoría de aproximación (ver Sección <a href="06-fuera-estadistica.html#SecNAaAT">6.1</a>),</p>
+<p>por nombrar sólo algunos. El modelo Matérn proporciona un entorno natural para estudiar el rendimiento de [blup] si suponemos que <span class="math inline">\(Z\)</span> tiene una función de covarianza isotrópica estacionaria <span class="math inline">\(\sigma^2 {\cal M}_{\nu,\alpha}\)</span> . La cuestión crucial de cómo seleccionar valores adecuados para los parámetros <span class="math inline">\(\sigma\)</span> , <span class="math inline">\(\alpha\)</span> , <span class="math inline">\(\nu\)</span> se considerará primero en la sección <a href="#seclik">3.1</a>, y luego se estudiará el rendimiento de [blup] en la sección <a href="#pprr">3.2</a>. La posibilidad de una extensión directa del modelo de Matérn a dominios más generales, como variedades y gráficos, se analiza en la sección [3.3].</p>
+<section id="seclik" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="seclik"><span class="header-section-number">3.1</span> Estimación utilizando la máxima verosimilitud</h2>
+<p>La máxima verosimilitud (ML) y los métodos de estimación similares son populares en este entorno debido a la disponibilidad de métodos numéricos prácticos (incluidos los basados ​​en gradientes) para el cálculo y la teoría clásica que sustenta la ML. Por otro lado, en el uso del ML está implícito que el modelo estadístico está bien especificado y este juicio debe hacerse caso por caso. Para limitar el alcance, nos centramos en la estimación de ML en lo que sigue. Nuestro objetivo es comprender cuándo los parámetros del modelo de Matérn pueden estimarse consistentemente a partir de datos y comprender la distribución asintótica del estimador ML. Para ello, recuerde que la función logarítmica de verosimilitud gaussiana es</p>
+<p><span class="math display">\[
+\begin{aligned}
+\label{eq:17}
+\hspace{20pt} \mathcal{L}_{n}(\boldsymbol{\theta}) = -\frac{1}{2} \left( \log(|\sigma^2 \boldsymbol{R}_{n})|) + \frac{1}{\sigma^{2}}\boldsymbol{Z}_n^{\top}\boldsymbol{R}_{n}^{-1}\boldsymbol{Z}_n \right),
+\end{aligned}
+\]</span></p>
+<p>hasta una constante aditiva, con <span class="math inline">\(\boldsymbol{\theta}=(\nu,\alpha, \sigma^{2})\)</span> . El estimador ML se define como</p>
+<p><span class="math display">\[
+\widehat{\boldsymbol{\theta}}_{n}=\underset{\boldsymbol{\theta} \in \mathbb{R}^3_{+} }{\textrm{argmax}}\,\mathcal{L}_{n}(\boldsymbol{\theta}) . \label{eq: max like}
+\]</span></p>
+<p>La estimación de ML para el parámetro de varianza se puede calcular en forma cerrada como <span class="math inline">\(\widehat{\sigma}^2_n=\boldsymbol{Z}_n^{\top} \boldsymbol{R}^{-1}_n \boldsymbol{Z}_n/n\)</span> ; conectar esta expresión a [eq:17] reduce el problema numérico a la optimización de la llamada <em>probabilidad concentrada</em> sobre <span class="math inline">\(\mathbb{R}_+^2\)</span> . Sin embargo, maximizar la probabilidad logarítmica (concentrada) requiere resolver un problema de optimización no lineal, para el cual se deben utilizar métodos numéricos; consulte la Sección [4.3].</p>
+<p>El rendimiento de la estimación ML se ha estudiado principalmente en dos límites asintóticos diferentes. Bajo <em>asintóticas de dominio fijo</em>, el dominio de muestreo <span class="math inline">\(D\)</span> está acotado y el conjunto de ubicaciones muestreadas <span class="math inline">\(X_n\)</span> se vuelve cada vez más denso en <span class="math inline">\(D\)</span> . Bajo <em>asintóticas de dominio crecientes</em>, el dominio <span class="math inline">\(D\)</span> crece con el número <span class="math inline">\(n\)</span> de datos observados, y la distancia entre dos ubicaciones muestreadas cualesquiera está acotada desde cero. [180] tenga en cuenta que el rendimiento del estimador ML puede ser bastante diferente en estos dos marcos, como se analizará a continuación.</p>
+<section id="ida" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="ida"><span class="header-section-number">3.1.1</span> Asintóticas de dominio crecientes.</h3>
+<p>[107] hace uso de asintóticas de dominio crecientes para establecer, bajo condiciones de regularidad leve, que el estimador ML es <em>fuertemente consistente</em>, lo que significa que <span class="math inline">\(\widehat{\boldsymbol{\theta}}_{n}\stackrel{a.s.}{\longrightarrow} \boldsymbol{\theta}_0\)</span> para el parámetro <em>verdadero</em> <span class="math inline">\(\boldsymbol{\psi}_0\)</span> . Además, establecen que el estimador ML es <em>asintóticamente normal</em>, es decir,</p>
+<p><span class="math display">\[
+\boldsymbol{F}^{1/2}(\boldsymbol{\theta}_0)(\widehat{\boldsymbol{\theta}}_{n}-\boldsymbol{\theta}_0) \stackrel{d}{\longrightarrow} \mathcal{N}(\boldsymbol{0},\boldsymbol{I})
+\]</span></p>
+<p>donde <span class="math inline">\(\boldsymbol{F}(\boldsymbol{\theta})=-E[\mathcal{L}^{''}_{n}(\boldsymbol{\theta})]\)</span> es la matriz de información de Fisher, cuyas entradas son</p>
+<p><span class="math display">\[
+F(\boldsymbol{\theta})_{i,j}=
+\frac {1}{2}\mathrm{tr} \left(\frac{\mathrm{d} \boldsymbol{\Sigma}_n}{\mathrm{d} \boldsymbol{\theta}_i} \boldsymbol{\Sigma}_n^{-1}\frac{\mathrm{d} \boldsymbol{\Sigma}_n}{\mathrm{d} \boldsymbol{\theta}_j} \boldsymbol{\Sigma}_n^{-1}\right) ,
+\]</span></p>
+<p>y <span class="math inline">\(\boldsymbol{\Sigma}_{n}=\sigma^2 \boldsymbol{R}_n\)</span> . Aunque nos centramos en el modelo de Matérn, observamos que este tipo de resultados asintóticos son válidos para cualquier función de correlación paramétrica que obedezca condiciones de regularidad particulares que se expresan en términos de condiciones de valores propios en la matriz de correlación y sus derivadas.[107], aunque estos pueden no ser fáciles de verificar en general (ver por ejemplo[144], para el caso exponencial). En términos generales, siempre que la extensión espacial de la región de muestreo sea grande en comparación con el rango de dependencia del campo aleatorio, las asintóticas de dominio creciente proporcionan una descripción muy precisa del comportamiento de la estimación de ML.[180; 144; 84].</p>
+</section>
+<section id="asintóticas-de-dominio-fijo." class="level3" data-number="3.1.2">
+<h3 data-number="3.1.2" class="anchored" data-anchor-id="asintóticas-de-dominio-fijo."><span class="header-section-number">3.1.2</span> Asintóticas de dominio fijo.</h3>
+<p>[179] consideró la estimación de ML para el modelo de Matérn bajo asintóticas de dominio fijo, lo que demuestra que cuando el parámetro de suavidad <span class="math inline">\(\nu\)</span> es conocido y fijo, ninguno de los parámetros <span class="math inline">\(\sigma^2\)</span> y <span class="math inline">\(\alpha\)</span> se puede estimar de manera consistente cuando <span class="math inline">\(d=1, 2, 3\)</span> . En su lugar, sólo el parámetro</p>
+<p><span class="math display">\[
+\label{micro_matern}
+\text{micro}_{{\cal M}}= {\sigma^2}/{ \alpha^{2\nu}},
+\]</span></p>
+<p>a veces denominado <em>microergodic</em> parameter [180; 148], se puede estimar consistentemente. Esto es una consecuencia de la equivalencia de las dos medidas gaussianas correspondientes, que denotamos con <span class="math inline">\(P(\sigma^2_i{\cal M}_{\nu,\alpha_i})\)</span> , con <span class="math inline">\(i=0,1\)</span> . En particular, para cualquier conjunto infinito acotado <span class="math inline">\(D\subset \mathbb{R}^d\)</span> , <span class="math inline">\(d=1, 2, 3\)</span> , <span class="math inline">\(P(\sigma^2_0{\cal M}_{\nu,\alpha_0})\)</span> es equivalente a <span class="math inline">\(P( \sigma^2_1{\cal M}_{\nu,\alpha_1})\)</span> en los caminos de <span class="math inline">\(Z(\boldsymbol{x}), \boldsymbol{x} \in D\)</span> , si y sólo si</p>
+<p><span class="math display">\[
+\label{matern_equivalence}
+\sigma_0^2 / \alpha_0^{2\nu}=\sigma_1^2/ \alpha_1^{2\nu}.
+\]</span></p>
+<p>En cambio, para <span class="math inline">\(d \geq 5\)</span> , [8]demostró la ortogonalidad de dos medidas gaussianas con diferentes funciones de covarianza de Matérn y, por lo tanto, en este caso, todos los parámetros pueden estimarse consistentemente bajo asintóticas de dominio fijo. el caso <span class="math inline">\(d = 4\)</span> ha sido estudiado recientemente en[31].</p>
+<p>Los resultados asintóticos asociados con la estimación de ML del parámetro microergódico, nuevamente para un parámetro de suavidad conocido fijo <span class="math inline">\(\nu\)</span> , se pueden encontrar en [179] y más adelante en [84]. En particular, para un campo gaussiano de media cero definido en un conjunto infinito acotado <span class="math inline">\(D\subset \mathbb{R}^d\)</span> , <span class="math inline">\(d=1, 2, 3\)</span> , con una función de covarianza de Matérn <span class="math inline">\(\sigma^2_0{\cal M}_{\nu,\alpha_0}\)</span> , el estimador ML <span class="math inline">\(\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}\)</span> del parámetro microergódico es fuertemente consistente, <span class="math inline">\(i.e.\)</span> ,</p>
+<p><span class="math display">\[
+\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}\stackrel{a.s.}{\longrightarrow} \sigma_{0}^{2}/\alpha_{0}^{2\nu},
+\]</span></p>
+<p>y su distribución asintótica viene dada por</p>
+<p><span class="math display">\[
+\sqrt{n}(\hat{\sigma}_{n}^{2}/\hat{\alpha}_{n}^{2\nu}-\sigma_{0}^{2}/\alpha_{0}^{2\nu})\stackrel{d}{\longrightarrow} \mathcal{N}(0,2(\sigma_{0}^{2}/\alpha_{0}^{2\nu})^2).
+\]</span></p>
+<p>. En términos generales, cuando el rango de dependencia del campo aleatorio es grande con respecto a la extensión espacial de la región de muestreo, las asintóticas de dominio fijo proporcionan una descripción muy precisa del comportamiento de la estimación ML del parámetro microergódico [84]. Las extensiones de estos resultados al caso donde se observa <span class="math inline">\(Z\)</span> con errores gaussianos se pueden encontrar en [156], mientras que los resultados para una versión espacio-temporal del modelo de Matérn se pueden encontrar en [77] y [55]. Finalmente destacamos que la estimación eficiente del parámetro microergódico asumiendo que el parámetro de suavidad es desconocido aún es un problema abierto; Algunos resultados prometedores en esta dirección se pueden encontrar en [105].</p>
+</section>
+</section>
+<section id="pprr" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="pprr"><span class="header-section-number">3.2</span> Predicción y efecto de apantallamiento</h2>
+<p>La equivalencia de medidas gaussianas dentro de la clase Matérn tiene consecuencias para la predicción de <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> en una ubicación no observada <span class="math inline">\(\boldsymbol{x}_0 \in D \setminus X_n\)</span> ; estas consecuencias se discutirán ahora. En lo que sigue, se supone que <span class="math inline">\(\nu\)</span> es conocido y solucionado, y consideramos la configuración donde <span class="math inline">\(\sigma\)</span> y <span class="math inline">\(\alpha\)</span> están <em>mal especificados</em>. Es decir, suponemos que <span class="math inline">\(Z\)</span> es un campo gaussiano con covarianza Matérn <span class="math inline">\(\sigma_0^2 {\cal M}_{\nu,\alpha_0}\)</span> , y consideramos el rendimiento del predictor [blup] cuando se utiliza un modelo Matérn <span class="math inline">\(\sigma_1^2 {\cal M}_{\nu,\alpha_1}\)</span> . Esta situación es típica, ya que los verdaderos parámetros <span class="math inline">\(\sigma_0\)</span> y <span class="math inline">\(\alpha_0\)</span> del proceso de generación de datos serán desconocidos en general. Nuestro escenario teórico serán las asintóticas de dominio fijo.</p>
+<p>Tenga en cuenta, primero, que [blup] no depende del valor de <span class="math inline">\(\sigma_1\)</span> , pero sí depende del valor del parámetro <span class="math inline">\(\alpha_1\)</span> (y del parámetro <span class="math inline">\(\nu\)</span> , pero este parámetro es fijo). Esta dependencia se enfatizará utilizando la notación <span class="math inline">\(\boldsymbol{c}_n(\alpha_1)\)</span> y <span class="math inline">\(\boldsymbol{R}_{n}(\alpha_1)\)</span> . Bajo la medida gaussiana <span class="math inline">\(P(\sigma^2_0{\cal M}_{\nu,\alpha_0})\)</span> asociada con el modelo <em>verdadero</em> <span class="math inline">\(\sigma^2_0{\cal M}_{\nu,\alpha_0}\)</span> , el error cuadrático medio del predictor <span class="math inline">\(\widehat{Z}_{n}(\alpha_1)\)</span> viene dado por</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;\operatorname{var}_{\alpha_0,\sigma^2_0}\left[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\right] \\
+&amp;=\sigma_0^2\Big(1-2\boldsymbol{c}_n(\alpha_1)^{\top
+} \boldsymbol{R}_{n}(\alpha_1)^{-1}
+\boldsymbol{c}_n(\alpha_0) \\
+&amp;\hspace{30pt} + \boldsymbol{c}_n(\alpha_1)^{\top} \boldsymbol{R}_{n}(\alpha_1)^{-1} \boldsymbol{R}_{n}(\alpha_0) \boldsymbol{R}_{n}(\alpha_1)^{-1}\boldsymbol{c}_n(\alpha_1)\Big) ,
+\end{aligned}
+\]</span></p>
+<p>mientras que si no hay ninguna especificación errónea entonces la expresión anterior se reduce a</p>
+<p><span class="math display">\[
+\begin{aligned}
+\label{msetrue}
+&amp; \operatorname{var}_{\alpha_0,\sigma_0^2}\big[\widehat{Z}_{n}(\alpha_0)-Z(\boldsymbol{x}_0)\big]\\
+\nonumber &amp; \hspace{40pt} = \sigma_0^2\big(1-\boldsymbol{c}_n(\alpha_0)^\top\boldsymbol{R}_{n}^{-1}(\alpha_0)\boldsymbol{c}_n(\alpha_0)\big).
+\end{aligned}
+\]</span></p>
+<p>En condiciones de regularidad, y para asintóticas de dominio fijo,[146]muestra que tanto la predicción asintóticamente eficiente como la estimación asintóticamente correcta de la varianza de la predicción se mantienen cuando las dos medidas gaussianas <span class="math inline">\(P(\sigma^2_i{\cal M}_{\nu,\alpha_i})\)</span> , <span class="math inline">\(i=0,1\)</span> son equivalentes, <em>es decir</em> [matern_equivalence]. Específicamente,</p>
+<p><span class="math display">\[
+\label{kauf3_1} \frac{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_0)-Z(\boldsymbol{x}_0)\bigr]}\stackrel{a.s.}{\longrightarrow}1
+\]</span></p>
+<p>y</p>
+<p><span class="math display">\[
+\label{kauf3_3} \frac{\operatorname{var}_{\sigma^2_1,\alpha_1}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}{\operatorname{var}_{\sigma^2_0,\alpha_0}\bigl[\widehat{Z}_{n}(\alpha_1)-Z(\boldsymbol{x}_0)\bigr]}\stackrel{a.s.}{\longrightarrow}1.
+\]</span></p>
+<p>La implicación de ([kauf3_1]) es que, según el modelo verdadero, si el valor correcto de <span class="math inline">\(\nu\)</span> se utiliza cualquier valor de <span class="math inline">\(\alpha_1\)</span> dará eficiencia asintótica. La implicación de ([kauf3_3]) es más fuerte y garantiza que el uso del predictor mal especificado bajo los modelos correcto y mal especificado es asintóticamente equivalente desde el punto de vista del error cuadrático medio. Tenga en cuenta que este tipo de resultados no considera la incertidumbre asociada con los parámetros de covarianza del modelo mal especificado.[84]demuestre que ([kauf3_3]) todavía se cumple considerando el estimador ML de la varianza <span class="math inline">\(\hat{\sigma}^2_n=\boldsymbol{Z}_n^\top \boldsymbol{R}^{-1}_n(\alpha_1) \boldsymbol{Z}_n/n\)</span> en su lugar <span class="math inline">\(\sigma^2_1\)</span> .</p>
+<p>También se han establecido condiciones de equivalencia de dos medidas gaussianas basadas en una versión espacio-temporal [77] y bivariada [14] del modelo de Matérn. A continuación, consideramos un aspecto prácticamente importante de la predicción; el llamado efecto de apantallamiento.</p>
+<p><em>Efecto de cribado.</em> El <em>efecto de cribado</em> se refiere al fenómeno en el que el predictor [blup] depende casi exclusivamente de aquellas observaciones que se encuentran más cercanas al predictand [149]. Como tal, el efecto de apantallamiento es una herramienta importante que se puede utilizar para mitigar la carga computacional de evaluar [blup] en presencia de grandes conjuntos de datos. Esta cuestión ha sido tradicionalmente un tema importante en geoestadística [109; 110; 111; 41]. De hecho, [109] [110], en la Escuela de Geoestadística de la Escuela de Minas, desarrolló una primera formalización del efecto de cribado, refiriéndose a situaciones en las que las observaciones situadas lejos del pronóstico reciben un peso kriging cero. La definición de Matheron tiene una conexión directa con la propiedad de Markov en la recta real, que ocurre cuando se realiza kriging bajo el modelo exponencial (de hecho, <span class="math inline">\({\cal M}_{1/2,\alpha}\)</span> ).</p>
+<p>M. Stein [148; 149; 151; 152] adopta una definición alternativa del efecto de apantallamiento que se describirá a continuación. Sea <span class="math inline">\(Z\)</span> un campo aleatorio gaussiano de media cuadrática continua, media cero y débilmente estacionario en <span class="math inline">\(\mathbb{R}^d\)</span> . Sea <span class="math inline">\(e(X_n)\)</span> el error del predictor [blup] de <span class="math inline">\(Z(\boldsymbol{x}_0)\)</span> basado en <span class="math inline">\(\boldsymbol{Z}_n\)</span> . Se considerarán dos opciones para el conjunto <span class="math inline">\(X_n\)</span> de ubicaciones de observación y, para este fin, dejaremos que <span class="math inline">\(F_{\epsilon}, N_{\epsilon}\)</span> sean conjuntos, indexados por <span class="math inline">\(\epsilon&gt;0\)</span> , de modo que <span class="math inline">\(N_{\epsilon}\)</span> contenga las observaciones más cercanas al predictando y <span class="math inline">\(F_{\epsilon}\)</span> las observaciones más lejanas. Luego [149] dice que <span class="math inline">\(N_{\epsilon}\)</span> <em>excluye asintóticamente</em> <span class="math inline">\(F_{\epsilon}\)</span> cuando</p>
+<p><span class="math display">\[
+\label{def-screening} \lim_{\epsilon \downarrow 0} \frac{\mathbb{E} \; e (N_{\epsilon} \cup F_{\epsilon})^2}{\mathbb{E} \; e (N_{\epsilon})^2} = 1.
+\]</span></p>
+<p>Se puede encontrar una discusión exhaustiva de las implicaciones de esta definición en [128], donde se informan diferencias no triviales entre dominio fijo y asintóticos de dominio creciente.</p>
+<p>La configuración espacial del punto de muestreo <span class="math inline">\(X_n\)</span> determina si se mantendrá el efecto de apantallamiento. [128] se refiere a un <em>esquema regular</em> como aquel para el cual <span class="math inline">\(F_{\epsilon} = \{ \epsilon (\boldsymbol{x}_0+j) \}\)</span> , <span class="math inline">\(j \in \mathbb{Z}^d\)</span> y <span class="math inline">\(N_{\epsilon}\)</span> son la restricción de <span class="math inline">\(F_{\epsilon}\)</span> a alguna región fija con <span class="math inline">\(\boldsymbol{x}_0\)</span> en su interior, asumiendo <span class="math inline">\(\boldsymbol{x}_0 \notin \mathbb{Z}^d\)</span> . Para esquemas regulares, [149] estableció ([def-screening]) siempre que <em>el espectro <span class="math inline">\(\widehat{K}\)</span> varía regularmente en el infinito [27] en todas las direcciones con un índice de variación común</em> [citado de [128]]. Sin embargo, esta condición puede no ser útil para procesos espacio-temporales, donde las propiedades de diferenciabilidad en las coordenadas espacio-temporales no son necesariamente idénticas. Para superar este problema, consideramos en su lugar un <em>esquema irregular</em>: para que <span class="math inline">\(\boldsymbol{x}_1, \ldots, \boldsymbol{x}_n\)</span> sea elementos distintos de <span class="math inline">\(\mathbb{R}^d\)</span> , <span class="math inline">\(\boldsymbol{y}_1, \ldots, \boldsymbol{y}_N\)</span> sean elementos distintos de <span class="math inline">\(\mathbb{R}^d\)</span> , <span class="math inline">\(\boldsymbol{x}_0=\boldsymbol{0} \in \mathbb{R}^d\)</span> y <span class="math inline">\(\boldsymbol{y}_0 \in \mathbb{R}^d\)</span> sean distintos de cero, tenemos <span class="math inline">\(N_{\epsilon} =\{\epsilon \boldsymbol{x}_1,\ldots,\epsilon \boldsymbol{x}_n \}\)</span> y <span class="math inline">\(F_{\epsilon} =\{\boldsymbol{y}_0 +\epsilon\boldsymbol{y}_1,\ldots, \boldsymbol{y}_0 +\epsilon\boldsymbol{y}_N\}\)</span> . La <em>hipótesis de Stein</em> [denominada en [128]]</p>
+<p><span class="math display">\[
+\label{condition1}
+\forall R &gt; 0, \quad \lim_{\|\boldsymbol{\omega}\| \to \infty } \sup_{\| \boldsymbol{\tau}\|&lt;R} \bigg | \frac{\widehat{K}(\boldsymbol{\omega}+\boldsymbol{\tau} )}{\widehat{K}(\boldsymbol{\omega})} -1 \bigg |=0,
+\]</span></p>
+<p>proporciona una condición suficiente para el efecto de apantallamiento en este entorno (bajo algunas condiciones adicionales leves en <span class="math inline">\(\widehat{K}\)</span> y <span class="math inline">\(N_\epsilon\)</span> ), que se puede verificar en dimensiones <span class="math inline">\(d=1\)</span> y <span class="math inline">\(d=2\)</span> para campos aleatorios continuos pero no diferenciables de media cuadrática, para algunos diseños específicos <span class="math inline">\(N_\epsilon\)</span> [151]. El modelo Matérn con <span class="math inline">\(K = {\cal M}_{\alpha,\nu}\)</span> admite una expresión simple para su espectro[2 11.4.44]:</p>
+<p><span class="math display">\[
+\label{stein1}
+\widehat{{\cal M}}_{\nu,\alpha}(z)= \frac{\Gamma(\nu+d/2)}{\pi^{d/2} \Gamma(\nu)}
+%\frac{\sigma^2 (1/\alpha)^{2 \nu}}{((1/\alpha)^2+ z^2)^{\nu+d/2}}
+\frac{ \alpha^d}{(1+\alpha^2z^2)^{\nu+d/2}}
+, \; \; z \ge 0 ,
+\]</span></p>
+<p>a partir del cual se puede verificar [condition1].</p>
+<p>De este modo se puede establecer el efecto de cribado para el modelo de Matérn, tanto bajo esquemas regulares como irregulares, justificando el uso de aproximaciones “locales” al predictor [blup].</p>
+</section>
+<section id="manifolds-graphs" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="manifolds-graphs"><span class="header-section-number">3.3</span> Matérn sobre variedades y grafos</h2>
+<p>Sea <span class="math inline">\(M\)</span> una variedad general. Una pregunta pragmática es si la función de correlación de Matérn [matern] se puede componer con una métrica adecuada <span class="math inline">\(g\)</span> , definida en la variedad, para preservar la precisión positiva sobre <span class="math inline">\(M\)</span> . Para el caso de la esfera, una métrica natural es la distancia geodésica; la longitud del arco que conecta cualquier par de puntos ubicados sobre la capa esférica. Para esta métrica, <span class="math inline">\((x,y) \mapsto {\cal M}_{\nu,\alpha}(g(x,y))\)</span> es una función de correlación solo para <span class="math inline">\(0 &lt; \nu \le 1/2\)</span> [63]. Esta limitación se enfatiza en [3], quien propone la familia <span class="math inline">\({\cal F}\)</span> , un modelo válido en la esfera y que tiene las mismas propiedades que la función de Matérn en términos de diferenciabilidad cuadrática media y dimensión fractal. La función Matérn en otras variedades generales ha sido estudiada por [98]. [69] propone una expansión espectral para definir una función de covarianza que imita el modelo de Matérn, pero [101] critica esta construcción por ser incorrecta ya que la expansión espectral no reproduce las mismas propiedades del modelo de Matérn.</p>
+<p>Lamentablemente, parece que la aplicabilidad limitada del modelo Matérn en cualquier espacio que no sea una superficie plana se extiende también a entornos más abstractos. Un elegante argumento de incrustación isométrica en [9] demuestra que la restricción <span class="math inline">\(0 &lt; \nu \le 1/2\)</span> es necesaria cuando el espacio de entrada es un gráfico con aristas euclidianas. Un argumento más general en [112] demuestra que la misma restricción se hereda para un espacio cuasi métrico general dotado de una métrica geodésica. El notable esfuerzo de [30] proporciona un modelo que alguna vez es diferenciable en gráficos métricos. Es razonable concluir que, en general, se necesita alguna forma del enfoque SPDE, que analizamos a continuación en la sección <a href="04-estadistica-computacional.html#SecSPDE">4.2</a>, para extender el modelo de Matérn a una variedad general.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./02-modelo-matern.html" class="pagination-link" aria-label="El modelo Matérn">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">El modelo Matérn</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./04-estadistica-computacional.html" class="pagination-link" aria-label="El Modelo Matérn en Estadística Computacional">
+        <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">El Modelo Matérn en Estadística Computacional</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

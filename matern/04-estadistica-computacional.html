@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>4&nbsp; El Modelo Matérn en Estadística Computacional – El modelo Matérn</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./05-modelado-flexible.html" rel="next">
+<link href="./03-estimacion-prediccion.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-485d01fc63b59abcd3ee1bf1e8e2748d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Sin resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="estilos.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./04-estadistica-computacional.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">El Modelo Matérn en Estadística Computacional</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Buscar" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">El modelo Matérn</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Buscar"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Presentación</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-introduccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introducción</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-modelo-matern.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">El modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-estimacion-prediccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Estimación y Predicción con el Modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-estadistica-computacional.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">El Modelo Matérn en Estadística Computacional</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-modelado-flexible.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Modelado flexible con Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06-fuera-estadistica.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">El Modelo Matérn fuera de la estadística</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-mejoras.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Mejoras del Modelo Matérn</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08-utilidad-mejoras.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">¿Son útiles las mejoras del modelo Matérn?</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09-referencias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Referencias</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10-material-complementario.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Modelado a través de Matérn en escenarios no convencionales: la versión extendida</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Tabla de contenidos</h2>
+   
+  <ul>
+  <li><a href="#SecSDE" id="toc-SecSDE" class="nav-link active" data-scroll-target="#SecSDE"><span class="header-section-number">4.1</span> Implementación como SDE</a></li>
+  <li><a href="#SecSPDE" id="toc-SecSPDE" class="nav-link" data-scroll-target="#SecSPDE"><span class="header-section-number">4.2</span> Implementación como SPDE</a></li>
+  <li><a href="#approx-like" id="toc-approx-like" class="nav-link" data-scroll-target="#approx-like"><span class="header-section-number">4.3</span> Verosimilitud aproximada y el Modelo Matérn</a></li>
+  <li><a href="#SecQua" id="toc-SecQua" class="nav-link" data-scroll-target="#SecQua"><span class="header-section-number">4.4</span> El modelo Matérn <em>para</em> computación bayesiana</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span id="Sec4" class="quarto-section-identifier"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">El Modelo Matérn en Estadística Computacional</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Esta sección explora la interacción del modelo Matérn con las estadísticas computacionales, comenzando con métodos numéricos para <em>implementación</em> del modelo Matérn (Secciones <a href="#SecSDE">4.1</a>, <a href="#SecSPDE">4.2</a> y [4.3]), y luego pasando a los usos del modelo Matérn para <em>facilitar</em> el cálculo numérico en sí (Sección <a href="#SecQua">4.4</a>).</p>
+<section id="SecSDE" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="SecSDE"><span class="header-section-number">4.1</span> Implementación como SDE</h2>
+<p>El modelo de Matérn admite una representación en <em>espacio de estados</em> como un SDE, lo que permite emplear técnicas computacionales eficientes de la literatura sobre procesamiento de señales para simulación, estimación y predicción. En efecto, centrándose en la dimensión <span class="math inline">\(d=1\)</span> , y dejando</p>
+<p><span class="math display">\[
+\mathbf{Z}(x) = (Z,\mathrm{d}Z/\mathrm{d}x,\dots,\mathrm{d}^k Z/\mathrm{d}x^k) ,
+\]</span></p>
+<p>el modelo Matérn <span class="math inline">\(\mathcal{M}_{\nu,\alpha}\)</span> con <span class="math inline">\(\nu = k + 1/2\)</span> admite la caracterización</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathrm{d}\mathbf{Z} = \left( \begin{array}{cccc} 0 &amp; 1 &amp; &amp; \\ &amp; \vdots &amp; \vdots &amp; \\ &amp; &amp; 0 &amp; 1 \\ - a_0 &amp; - a_1 &amp; \dots &amp; - a_{k-1} \end{array} \right) \mathbf{Z} \; \mathrm{d}x + \left( \begin{array}{c} 0 \\ \vdots \\ 0 \\ 1 \end{array} \right) \mathrm{d}\mathcal{W}
+\end{aligned}
+\]</span></p>
+<p>dónde <span class="math inline">\(a_i = {}_{k+1}\text{C}_i \cdot \alpha^{-k-1+i}\)</span> , el <span class="math inline">\({}_\cdot\text{C}_\cdot\)</span> son coeficientes binomiales, y <span class="math inline">\(\mathcal{W}(x)\)</span> representa un proceso de ruido blanco de media cero en <span class="math inline">\(x \in \mathbb{R}\)</span> [73]. La ventaja de las formulaciones de espacio de estados es que tanto la estimación como la predicción se pueden realizar en un <em>único paso</em> a través de los datos, en niveles lineales. <span class="math inline">\(O(n)\)</span> costo, utilizando ecuaciones de actualización familiares de Kalman como se describe en[135]y con más detalle en el Capítulo 6 de[75]. Se pueden encontrar caracterizaciones similares para dimensiones superiores, incluidas versiones espacio-temporales del modelo Matérn, en[135], aunque observamos que estos conservan la complejidad lineal sólo en el número de pasos de tiempo; la complejidad es cúbica en el tamaño de la cuadrícula espacial. El enfoque SPDE puede ofrecer una solución a este respecto, y lo analizamos a continuación.</p>
+</section>
+<section id="SecSPDE" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="SecSPDE"><span class="header-section-number">4.2</span> Implementación como SPDE</h2>
+<p>Una de las principales razones de la continua popularidad del modelo Matérn es la disponibilidad de métodos numéricos eficientes y escalables para la simulación, debido en gran parte a [102]. Estos autores consideran la SPDE</p>
+<p><span class="math display">\[
+\label{SPDE}
+(\alpha^{-2} -\Delta )^{\gamma/2} Z(\boldsymbol{x}) = {\cal W}(\boldsymbol{x}), \qquad \boldsymbol{x} \in \mathbb{R}^d,
+\]</span></p>
+<p>dónde <span class="math inline">\(\alpha&gt;0\)</span> , <span class="math inline">\(\Delta\)</span> es el laplaciano, y <span class="math inline">\({\cal W}\)</span> es un ruido blanco gaussiano en <span class="math inline">\(\mathbb{R}^d\)</span> , de modo que <span class="math inline">\(\text{Cov}\left ( {\cal W}(A_1),{\cal W}(A_2) \right )= |A_1 \cap A_2|\)</span> , dónde <span class="math inline">\(A_i\)</span> son subconjuntos de <span class="math inline">\(\mathbb{R}^d\)</span> , <span class="math inline">\(i=1,2\)</span> y donde <span class="math inline">\(|\cdot|\)</span> es la integral de volumen.[167]y[168]demostró que la solución a [SPDE] es un campo gaussiano con covarianza Matérn <span class="math inline">\(\sigma^2 \mathcal{M}_{\nu,\alpha}\)</span> con parametros <span class="math inline">\(\alpha\)</span> (como antes) y</p>
+<p><span class="math display">\[
+\sigma^2 = \frac{\Gamma(\nu) \alpha^{2 \nu}}{\Gamma(\nu + d/2) (4 \pi)^{d/2}} , \qquad \nu=\gamma-d/2 .
+\]</span></p>
+<p>Esta perspectiva ofrece dos ideas; En primer lugar, las herramientas desarrolladas para la aproximación numérica de las SPDE pueden aplicarse al modelo de Matérn y, en segundo lugar, existe un camino claro para generalizar la definición del modelo de Matérn a cualquier variedad (planar o no plana) en la que se pueda definir la SPDE análoga. (Por ejemplo,[78]tomar esta perspectiva para generalizar el modelo de Matérn al ámbito <span class="math inline">\(\mathbb{S}^d\)</span> .)</p>
+<p>Para proporcionar una aproximación computacionalmente conveniente a ([SPDE]), [102] consideró la solución débil a ([SPDE]) y la aproximación de la solución débil utilizando funciones básicas con soporte compacto sobre un dominio compacto <span class="math inline">\(\Omega \subset \mathbb{R}^d\)</span> (específicamente, se utilizó una aproximación <em>Galerkin</em> usando funciones de base de elementos finitos). Como resultado, los autores establecen una ruta formal para la aproximación del campo aleatorio <span class="math inline">\(Z\)</span> con un campo aleatorio <em>Gauss–Markov</em> que tiene una matriz de precisión <em>dispersa</em>. El álgebra matricial dispersa permite una simulación rápida de realizaciones del campo aleatorio de Matérn y una evaluación rápida de la probabilidad [eq:17] (aunque no una evaluación rápida del gradiente de probabilidad).</p>
+<p>La elección del dominio <span class="math inline">\(\Omega\)</span> introduce efectos de límite que deben mitigarse cuidadosamente. [87] [37] proporciona una solución para el caso en el que <span class="math inline">\(\gamma\)</span> es un número entero; el caso no entero se considera en [30]. La extensión del campo Matérn basado en SPDE al espacio-tiempo la proporciona [39] y posteriormente [15] [42], mientras que el caso multivariado de Matérn se ha explorado en [33]. [92] ha proporcionado aproximaciones alternativas basadas en los métodos de Galerkin en variedades. [121] propone un enfoque interesante que permite trabajar en variedades con grandes conjuntos de datos. El interés por esta literatura es dual. Por un lado, los aspectos técnicos relacionados con la representación en dimensión finita de campos aleatorios gaussianos son extremadamente interesantes <em>per se</em>. Por otro lado, este grupo de autores en realidad está motivado por proporcionar herramientas para una computación eficiente. Esto lo atestiguan los paquetes existentes relevantes (R-INLA, inlabru y rSPDE, por ejemplo) y nos remitimos a la revisión de [101].</p>
+<p>[133] intenta explicar el equilibrio entre precisión y escalabilidad en la aproximación numérica del modelo Matérn. Recuerde que, en el enfoque SPDE [102], <span class="math inline">\(Z\)</span> en ([SPDE]) se aproxima numéricamente utilizando un proceso gaussiano</p>
+<p><span class="math display">\[
+\label{delta}
+Z_{\delta}(\boldsymbol{x})= \sum_{k=1}^{n_{\delta}} \omega_k \epsilon_k(\boldsymbol{x}), \qquad \boldsymbol{x} \in \Omega,
+\]</span></p>
+<p>dónde <span class="math inline">\(\epsilon_k\)</span> son funciones de base de elementos finitos y el vector <span class="math inline">\(\boldsymbol{\omega}=(\omega_1, \ldots, \omega_{n_{\delta}})^{\top}\)</span> es gaussiano multivariado con media cero y con una matriz de precisión dispersa. La precisión de la aproximación. <span class="math inline">\(Z_\delta\)</span> depende de (a) el soporte compacto de las funciones de base de elementos finitos, (b) los efectos de frontera debidos al dominio <span class="math inline">\(\Omega\)</span> , y (c) por el ancho de malla <span class="math inline">\(\delta\)</span> que determina la cardinalidad <span class="math inline">\(n_{\delta}\)</span> en ([delta]). La mayor parte de la literatura anterior ha considerado ([delta]) con <span class="math inline">\(n_{\delta}\)</span> proporcional al tamaño de la muestra <span class="math inline">\(n\)</span> del conjunto de datos que se está modelando.[133]adoptar un enfoque asintótico de dominio fijo para explicar cuándo <span class="math inline">\(n_{\delta} \ll n\)</span> podría ser una estrategia legítima. Para ello, consideran la regresión del proceso gaussiano y trabajan bajo el marco de tasas de contracción bayesianas. Sus resultados justifican escalas específicas de <span class="math inline">\(n_\delta\)</span> con <span class="math inline">\(n_\delta = o(n)\)</span> , siempre que la suavidad <span class="math inline">\(\nu\)</span> es suficientemente alto.</p>
+<p>Recientemente se tomó un camino diferente hacia los campos aleatorios SPDE y Gauss-Markov en [134], que adopta discretizaciones de SPDE basadas en gráficos. Este enfoque puede resultar adecuado para trabajar con nubes de puntos discretas y no estructuradas, como en tareas de aprendizaje automático donde los datos pertenecen a una variedad de baja dimensión definida implícitamente. Una segunda ventaja de este enfoque es que no se requiere una triangulación explícita del dominio.</p>
+</section>
+<section id="approx-like" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="approx-like"><span class="header-section-number">4.3</span> Verosimilitud aproximada y el Modelo Matérn</h2>
+<p>Al estimar los parámetros del modelo Matérn usando ML [eq: max like], se requiere optimización numérica. Aunque se pueden utilizar rutinas de optimización genéricas, un enfoque a menudo mejor es construir primero una aproximación precisa pero barata a la probabilidad, que luego puede maximizarse más fácilmente. De hecho, las probabilidades aproximadas son esenciales cuando se trata de grandes conjuntos de datos, ya que la evaluación de ([eq:17]) requiere calcular la inversa y el determinante de la matriz de correlación, generalmente mediante la descomposición de Cholesky con complejidad <span class="math inline">\(O(n^3)\)</span> y costo de almacenamiento <span class="math inline">\(O(n^2)\)</span> .</p>
+<p>Quizás la aproximación más exitosa sea el <em>método de Vecchia</em> [163], que ha atraído una notable atención en los últimos tiempos [inc. [147]; 48; 49; 67; 47]. La aproximación de Vecchia se puede utilizar con cualquier modelo de correlación y su idea básica es reemplazar ([eq:17]) con un producto de distribuciones condicionales gaussianas, en las que cada distribución condicional involucra solo un pequeño subconjunto de datos. Esta aproximación requiere que los datos estén <em>ordenados</em> y que se especifique el número <span class="math inline">\(m\)</span> de datos ‘anteriores’ sobre los cuales condicionar. Generalmente, un <span class="math inline">\(m\)</span> más grande implica una aproximación más precisa y computacionalmente costosa, mientras que la elección del orden afecta la precisión de la aproximación [67]. El método Vecchia proporciona una aproximación dispersa al factor de Cholesky de la matriz de precisión, de modo que la probabilidad aproximada se puede calcular en tiempo <span class="math inline">\(O(nm^3)\)</span> y con costo de almacenamiento <span class="math inline">\(O(nm^2)\)</span> . Consulte la revisión reciente de [83] para obtener más detalles. La verosimilitud de Vecchia puede verse como un ejemplo específico de una clase más general de métodos de estimación llamados verosimilitud cuasi o compuesta [103; 162] que se han utilizado ampliamente para la estimación de campos gaussianos con el modelo de Matérn [52; 26; 13].</p>
+<p>Un método alternativo para mitigar la carga computacional de la estimación de ML es la <em>reducción gradual de la covarianza</em> [59]. La idea básica es multiplicar el modelo de Matérn con una función de correlación con soporte compacto, lo que da como resultado un modelo de Matérn “modificado” con soporte compacto. Esto induce dispersidad en la matriz de covarianza asociada, de modo que los algoritmos para matrices dispersas pueden explotarse para una evaluación computacionalmente eficiente de la descomposición de Cholesky [59]. Sin embargo, algunos autores [25; 23] sugieren que el tapering podría ser un enfoque obsoleto en vista de que recientemente se han propuesto modelos flexibles con soporte compacto que incluyen el modelo Matérn como caso especial; consulte la sección <a href="08-utilidad-mejoras.html">8</a>. Una revisión exhaustiva de las aproximaciones de probabilidad está fuera del alcance de este documento, por lo que remitimos al lector a [154] y [74] para obtener más detalles.</p>
+</section>
+<section id="SecQua" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="SecQua"><span class="header-section-number">4.4</span> El modelo Matérn <em>para</em> computación bayesiana</h2>
+<p>En la última década ha habido un interés creciente en el uso de métodos núcleo para resolver PDE. Considere un sistema</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathcal{A} u &amp; = f \qquad \text{en } \Omega \\
+\mathcal{B} u &amp; = g \qquad \text{sobre } \partial\Omega
+\end{aligned}
+\]</span></p>
+<p>especificado por una ecuación diferencial que involucra <span class="math inline">\(\mathcal{A}\)</span> y <span class="math inline">\(f\)</span> , y condiciones iniciales o de contorno especificadas por <span class="math inline">\(\mathcal{B}\)</span> y <span class="math inline">\(g\)</span> . Se remonta al menos a[57]en el contexto determinista, y reinterpretado a través de una lente bayesiana por autores como[43], se puede buscar una aproximación a la solución fuerte <span class="math inline">\(u : \Omega \rightarrow \mathbb{R}\)</span> modelando <span class="math inline">\(u\)</span> como <em>a priori</em> un campo aleatorio gaussiano y condicionando ese campo para satisfacer la ecuación diferencial en ubicaciones <span class="math inline">\(\{\boldsymbol{x}_1,\dots,\boldsymbol{x}_m\} \subset \Omega\)</span> y satisfacer las condiciones de contorno en ubicaciones <span class="math inline">\(\{\boldsymbol{x}_{m+1},\dots,\boldsymbol{x}_n\} \subset \partial \Omega\)</span> . La media condicional de este proceso coincide con el método de <em>colocación simétrica</em> introducido por[57], a la que volvemos en la Sección <a href="06-fuera-estadistica.html#SecNAaAT">6.1</a>, mientras que la varianza condicional proporciona una cuantificación probabilística de la incertidumbre para la solución, expresando la incertidumbre que queda como resultado de usar solo un presupuesto computacional finito. Para implementar estos métodos, se requiere un proceso gaussiano cuyas trayectorias de muestra posean suficiente regularidad para la operación de condicionamiento en la derivada. <span class="math inline">\(\mathcal{A}u\)</span> estar bien definido. Por otro lado, asumir una suavidad excesiva podría llevar a una cuantificación de la incertidumbre excesivamente confiada. Por lo tanto, se requiere un núcleo con suavidad personalizable, que pueda adaptarse a la ecuación diferencial en cuestión. La clase Matérn satisface este requisito, pero no es la única que lo hace; Continuamos la discusión de este punto en la Sección <a href="07-mejoras.html">7</a>.</p>
+<p>Una PDE específica que ha recibido considerable atención recientemente en la comunidad estadística bayesiana es la <em>ecuación de Stein</em>, para la cual <span class="math inline">\(\mathcal{A}u = c + p^{-1} \nabla \cdot (p \nabla u)\)</span> , donde <span class="math inline">\(p\)</span> es la función de densidad de probabilidad de una distribución posterior de interés, <span class="math inline">\(f\)</span> es una función cuya expectativa posterior buscamos calcular y <span class="math inline">\(c\)</span> es una constante. Si la ecuación de Stein tiene solución, entonces <span class="math inline">\(c\)</span> <em>debe</em> ser el valor de la expectativa posterior que buscamos. Esto ha motivado varios esfuerzos para resolver numéricamente la ecuación de Stein, como una alternativa más directa a aproximar primero <span class="math inline">\(p\)</span> (por ejemplo usando la cadena de Markov Monte Carlo) y luego usar la aproximación de <span class="math inline">\(p\)</span> para aproximar la expectativa de interés. En este contexto, los métodos del núcleo se usan típicamente [117; 145] y, en particular, el núcleo debe tener una suavidad dos órdenes mayor que la de la función <span class="math inline">\(f\)</span> cuya expectativa es de interés, ya que la ecuación de Stein es una PDE de segundo orden. La generalización de la ecuación de Stein a variedades de Riemann se consideró en [19], quien abogó por el uso de núcleos con suavidad personalizable que reproducen espacios de funciones de Sobolev en la variedad, como la (generalización múltiple del) modelo Matérn. La conexión entre el modelo Matérn y los espacios de Sobolev se establece en el apartado <a href="06-fuera-estadistica.html#SecNAaAT">6.1</a>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./03-estimacion-prediccion.html" class="pagination-link" aria-label="Estimación y Predicción con el Modelo Matérn">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Estimación y Predicción con el Modelo Matérn</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./05-modelado-flexible.html" class="pagination-link" aria-label="Modelado flexible con Matérn">
+        <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Modelado flexible con Matérn</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
